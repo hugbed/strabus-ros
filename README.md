@@ -14,3 +14,6 @@ To display the screen on the LCD, replace `/dev/fb0` to `/dev/fb1` in :
 ```
 
 Then reboot.
+
+(see https://nonhazardo.us/raspberry/pi/tft/spi/device/tree/2016/05/30/raspberry_pi_zero_spi_screen.html)
+
