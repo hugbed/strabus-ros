@@ -4,6 +4,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+const uint WIDTH = 1920; // 320
+const uint HEIGHT = 1080; // 240
+
 cv::Mat rotate(cv::Mat src, double angle)
 {
 	cv::Point2f center(src.cols/2.0f, src.rows/2.0f);
@@ -15,7 +18,11 @@ cv::Mat rotate(cv::Mat src, double angle)
 
 	cv::Mat dst;
 	cv::warpAffine(src, dst, R, bBox.size());
-	return dst;
+
+    cv::Mat background = cv::Mat::zeros(HEIGHT, WIDTH, CV_8UC3);
+    dst.copyTo(background(cv::Rect((WIDTH-bBox.width)/2, (HEIGHT-bBox.height)/2, dst.cols, dst.rows)));
+
+	return background;
 }
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg)
