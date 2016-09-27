@@ -31,7 +31,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
-    cv::imshow("view", rotate(cv_ptr->image, 45));
+    cv::imshow("view", rotate(cv_ptr->image, 90));
     cv::waitKey(30);
   }
   catch (cv_bridge::Exception& e)
