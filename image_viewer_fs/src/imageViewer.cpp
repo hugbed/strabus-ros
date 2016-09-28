@@ -4,20 +4,33 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-const uint WIDTH = 1920; // 320
-const uint HEIGHT = 1080; // 240
+const uint WIDTH = 320;
+const uint HEIGHT = 240;
 
-cv::Mat rotate(cv::Mat src, double angle)
+cv::Mat rotate(cv::Mat src, float angle)
 {
-	cv::Point2f center(src.cols/2.0f, src.rows/2.0f);
+    // scale down the input image if bigger than destination
+    cv::Mat tmp;
+    float diagonalSquared = src.cols*src.cols + src.rows*src.rows;
+    float maxDSquared = WIDTH < HEIGHT ? WIDTH*WIDTH : HEIGHT*HEIGHT;
+
+    if (diagonalSquared > maxDSquared) {
+        float s = (float)sqrt(maxDSquared/diagonalSquared);
+        cv::resize(src, tmp, cv::Size((int)(s * src.cols), (int)(s*src.rows)), CV_INTER_AREA);
+    }
+    else {
+        src.copyTo(tmp);
+    }
+
+	cv::Point2f center(tmp.cols/2.0f, tmp.rows/2.0f);
 	
 	cv::Mat R = cv::getRotationMatrix2D(center, angle, 1.0);
-	cv::Rect bBox = cv::RotatedRect(center, src.size(), angle).boundingRect();
+	cv::Rect bBox = cv::RotatedRect(center, tmp.size(), angle).boundingRect();
 	R.at<double>(0,2) += bBox.width/2.0 - center.x;
 	R.at<double>(1,2) += bBox.height/2.0 - center.y;
 
 	cv::Mat dst;
-	cv::warpAffine(src, dst, R, bBox.size());
+	cv::warpAffine(tmp, dst, R, bBox.size());
 
     cv::Mat background = cv::Mat::zeros(HEIGHT, WIDTH, CV_8UC3);
     dst.copyTo(background(cv::Rect((WIDTH-bBox.width)/2, (HEIGHT-bBox.height)/2, dst.cols, dst.rows)));
@@ -31,7 +44,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
-    cv::imshow("view", rotate(cv_ptr->image, 90));
+    cv::imshow("view", rotate(cv_ptr->image, 45));
     cv::waitKey(30);
   }
   catch (cv_bridge::Exception& e)
