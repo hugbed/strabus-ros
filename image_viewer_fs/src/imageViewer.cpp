@@ -3,9 +3,17 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <image_viewer_fs/Angle.h>
+#include <image_viewer_fs/ImageFilename.h>
+#include <map>
 
 const uint WIDTH = 320;
 const uint HEIGHT = 240;
+
+float g_angle = 90.0f;
+std::string g_filename = "";
+
+std::map<std::string, cv::Mat> g_images;
 
 cv::Mat rotate(cv::Mat src, float angle)
 {
@@ -38,31 +46,59 @@ cv::Mat rotate(cv::Mat src, float angle)
 	return background;
 }
 
-void imageCallback(const sensor_msgs::ImageConstPtr& msg)
+void angleCallback(const image_viewer_fs::Angle::ConstPtr& msg)
 {
-  cv_bridge::CvImagePtr cv_ptr;
-  try
-  {
-    cv_ptr = cv_bridge::toCvCopy(msg, "bgr8");
-    cv::imshow("view", rotate(cv_ptr->image, 45));
-    cv::waitKey(30);
-  }
-  catch (cv_bridge::Exception& e)
-  {
-    ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
-  }
+    float oldAngle = g_angle;
+    g_angle = msg->angle;
+
+    if (oldAngle != g_angle) {
+        if (g_images.end() != g_images.find(g_filename)) {
+            cv::Mat image = g_images.find(g_filename)->second;
+            cv::imshow("view", rotate(image, g_angle));
+            cv::waitKey(30);
+        }
+    }
+}
+
+void imageFilenameCallback(const image_viewer_fs::ImageFilename::ConstPtr& msg) {
+    std::string oldFilename = g_filename;
+    g_filename = msg->imageFilename;
+
+    if (oldFilename != g_filename) {
+        cv::Mat image = cv::imread(g_filename, CV_LOAD_IMAGE_COLOR);
+
+        if (!image.data) {
+            std::cout << "Image not found : " << g_filename << std::endl;
+        } else {
+            cv::imshow("view", rotate(image, g_angle));
+            cv::waitKey(30);
+
+            // image not in map
+            if (g_images.end() == g_images.find(g_filename)) {
+                std::cout << "Added image to map : " << g_filename << std::endl;
+                g_images.insert(std::pair<std::string, cv::Mat>(g_filename, image));
+            } else {
+                std::cout << "Image already in map : " << g_filename << std::endl;
+            }
+        }
+    }
 }
 
 int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "image_viewer_fs");
-  ros::NodeHandle nh;
-  cv::namedWindow("view", CV_WINDOW_NORMAL);
-  cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-  cv::startWindowThread();
-  image_transport::ImageTransport it(nh);
-  image_transport::Subscriber sub = it.subscribe("camera/image", 1, imageCallback);
-  ros::spin();
-  cv::destroyWindow("view");
+    {
+    ros::init(argc, argv, "image_viewer_fs");
+    ros::NodeHandle nh;
+
+    ros::Subscriber angleSub = nh.subscribe("imageAngle", 1000, angleCallback);
+    ros::Subscriber filenameSub = nh.subscribe("imageFilename", 1000, imageFilenameCallback);
+
+
+    cv::namedWindow("view", CV_WINDOW_NORMAL);
+    cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+    cv::startWindowThread();
+
+    ros::spin();
+
+    cv::destroyWindow("view");
 }
 

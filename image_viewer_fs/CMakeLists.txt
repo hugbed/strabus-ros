@@ -50,6 +50,7 @@ find_package(message_generation)
 add_message_files(
   FILES
   Angle.msg
+  ImageFilename.msg
 )
 
 ## Generate services in the 'srv' folder
