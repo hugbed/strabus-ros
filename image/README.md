@@ -1,8 +1,8 @@
 # Nodes to publish and display images 
 
 Nodes :
-image_publish : publish an image on camera/image
-image_viewer_fs : view an image by file path, rotation angle and scale.
+  * image_publish : publish an image on camera/image
+  * image_viewer_fs : display an image fullscreen by file path, rotation angle and scale.
 
 ### LCD Notes : 
 To display the screen on the LCD, replace `/dev/fb0` to `/dev/fb1` in :
