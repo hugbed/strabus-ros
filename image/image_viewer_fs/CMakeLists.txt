@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(image_viewer_fs)
 
+add_definitions(-std=c++14)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -50,7 +52,8 @@ find_package(message_generation)
 add_message_files(
   FILES
   Angle.msg
-  ImageFilename.msg
+  Scale.msg
+  Filename.msg
 )
 
 ## Generate services in the 'srv' folder

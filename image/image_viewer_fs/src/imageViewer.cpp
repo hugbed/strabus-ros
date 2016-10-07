@@ -4,16 +4,73 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_viewer_fs/Angle.h>
-#include <image_viewer_fs/ImageFilename.h>
+#include <image_viewer_fs/Filename.h>
+#include <image_viewer_fs/Scale.h>
 #include <map>
+#include <mutex>
 
 const uint WIDTH = 320;
 const uint HEIGHT = 240;
 
+float g_scale = 1.0f;
 float g_angle = 90.0f;
 std::string g_filename = "";
 
 std::map<std::string, cv::Mat> g_images;
+std::mutex g_mapMutex; // write: unique access, read: shared access
+
+
+bool imageIsLoaded(std::string filename);
+bool loadImage(std::string filename, cv::Mat &out);
+bool getImage(std::string filename, cv::Mat &out);
+cv::Mat rotate(cv::Mat src, float angle);
+cv::Mat scale(cv::Mat src, float scale);
+bool updateImage(std::string filename);
+void angleCallback(const image_viewer_fs::Angle::ConstPtr& msg);
+void filenameCallback(const image_viewer_fs::Filename::ConstPtr& msg);
+void scaleCallback(const image_viewer_fs::Scale::ConstPtr& msg);
+
+
+bool imageIsLoaded(std::string filename)
+{
+    std::lock_guard<std::mutex> lock(g_mapMutex);
+    return g_images.end() != g_images.find(filename);
+}
+
+bool loadImage(std::string filename, cv::Mat &out)
+{
+    // load image if it's not already loaded
+    if (!imageIsLoaded(filename)) {
+        out = cv::imread(g_filename, CV_LOAD_IMAGE_COLOR);
+
+        // insert in dict if loading succeeds
+        if (out.data){
+            std::lock_guard<std::mutex> lock(g_mapMutex);
+            g_images.insert(std::pair<std::string, cv::Mat>(g_filename, out));
+            return true;
+        }
+    }
+
+    // file not found
+    return false;
+}
+
+bool getImage(std::string filename, cv::Mat &out)
+{
+    // return loaded image
+    if (imageIsLoaded(filename)) {
+        std::lock_guard<std::mutex> lock(g_mapMutex);
+        out = g_images.find(g_filename)->second;
+        return true;
+    }
+    // load image if not already loaded and return it
+    else if (loadImage(filename, out)) {
+        return true;
+    }
+
+    // image not found
+    return false;
+}
 
 cv::Mat rotate(cv::Mat src, float angle)
 {
@@ -30,20 +87,41 @@ cv::Mat rotate(cv::Mat src, float angle)
         src.copyTo(tmp);
     }
 
-	cv::Point2f center(tmp.cols/2.0f, tmp.rows/2.0f);
-	
-	cv::Mat R = cv::getRotationMatrix2D(center, angle, 1.0);
-	cv::Rect bBox = cv::RotatedRect(center, tmp.size(), angle).boundingRect();
-	R.at<double>(0,2) += bBox.width/2.0 - center.x;
-	R.at<double>(1,2) += bBox.height/2.0 - center.y;
+    // scale the image before adding it to the background
+    tmp = scale(tmp, g_scale);
 
-	cv::Mat dst;
-	cv::warpAffine(tmp, dst, R, bBox.size());
+    cv::Point2f center(tmp.cols/2.0f, tmp.rows/2.0f);
+
+    cv::Mat R = cv::getRotationMatrix2D(center, angle, 1.0);
+    cv::Rect bBox = cv::RotatedRect(center, tmp.size(), angle).boundingRect();
+    R.at<double>(0,2) += bBox.width/2.0 - center.x;
+    R.at<double>(1,2) += bBox.height/2.0 - center.y;
+
+    cv::Mat dst;
+    cv::warpAffine(tmp, dst, R, bBox.size());
 
     cv::Mat background = cv::Mat::zeros(HEIGHT, WIDTH, CV_8UC3);
     dst.copyTo(background(cv::Rect((WIDTH-bBox.width)/2, (HEIGHT-bBox.height)/2, dst.cols, dst.rows)));
 
-	return background;
+    return background;
+}
+
+cv::Mat scale(cv::Mat src, float scale)
+{
+    cv::Mat out;
+    cv::resize(src, out, cv::Size(int(scale*src.cols), int(scale*src.rows)), CV_INTER_AREA);
+    return out;
+}
+
+bool updateImage(std::string filename)
+{
+    cv::Mat image;
+    if (getImage(g_filename, image)) {
+        cv::imshow("view", rotate(image, g_angle));
+        cv::waitKey(30);
+        return true;
+    }
+    return false;
 }
 
 void angleCallback(const image_viewer_fs::Angle::ConstPtr& msg)
@@ -52,35 +130,27 @@ void angleCallback(const image_viewer_fs::Angle::ConstPtr& msg)
     g_angle = msg->angle;
 
     if (oldAngle != g_angle) {
-        if (g_images.end() != g_images.find(g_filename)) {
-            cv::Mat image = g_images.find(g_filename)->second;
-            cv::imshow("view", rotate(image, g_angle));
-            cv::waitKey(30);
-        }
+        updateImage(g_filename);
     }
 }
 
-void imageFilenameCallback(const image_viewer_fs::ImageFilename::ConstPtr& msg) {
+void filenameCallback(const image_viewer_fs::Filename::ConstPtr& msg)
+{
     std::string oldFilename = g_filename;
-    g_filename = msg->imageFilename;
+    g_filename = msg->filename;
 
     if (oldFilename != g_filename) {
-        cv::Mat image = cv::imread(g_filename, CV_LOAD_IMAGE_COLOR);
+        updateImage(g_filename);
+    }
+}
 
-        if (!image.data) {
-            std::cout << "Image not found : " << g_filename << std::endl;
-        } else {
-            cv::imshow("view", rotate(image, g_angle));
-            cv::waitKey(30);
+void scaleCallback(const image_viewer_fs::Scale::ConstPtr& msg)
+{
+    float oldScale = g_scale;
+    g_scale = std::min(std::max(0.0f, msg->scale), 1.0f);
 
-            // image not in map
-            if (g_images.end() == g_images.find(g_filename)) {
-                std::cout << "Added image to map : " << g_filename << std::endl;
-                g_images.insert(std::pair<std::string, cv::Mat>(g_filename, image));
-            } else {
-                std::cout << "Image already in map : " << g_filename << std::endl;
-            }
-        }
+    if (oldScale != g_scale) {
+        updateImage(g_filename);
     }
 }
 
@@ -90,8 +160,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::Subscriber angleSub = nh.subscribe("imageAngle", 1000, angleCallback);
-    ros::Subscriber filenameSub = nh.subscribe("imageFilename", 1000, imageFilenameCallback);
-
+    ros::Subscriber filenameSub = nh.subscribe("imageFilename", 1000, filenameCallback);
+    ros::Subscriber scaleSub = nh.subscribe("imageScale", 1000, scaleCallback);
 
     cv::namedWindow("view", CV_WINDOW_NORMAL);
     cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
