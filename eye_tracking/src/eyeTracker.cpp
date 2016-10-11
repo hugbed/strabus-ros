@@ -19,7 +19,7 @@ static const std::string OPENCV_WINDOW = "Debug window";
 EyeTracker::EyeTracker()
         : it_(nh_) {
     // Subscrive to input video feed and publish output video feed
-    image_sub_ = it_.subscribe("/usb_cam/image_raw", 1,
+    image_sub_ = it_.subscribe("/camera/image", 1,
                                &EyeTracker::frameCallback, this);
     image_pub_ = it_.advertise("/tracking/eye_tracking_feed", 1);
     position_pub_ = nh_.advertise<eye_tracking::Position>("/tracking/position", 1);
