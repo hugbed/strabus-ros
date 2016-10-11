@@ -98,9 +98,10 @@ cv::Mat rotate(cv::Mat src, float angle)
     R.at<double>(1,2) += bBox.height/2.0 - center.y;
 
     cv::Mat dst;
-    cv::warpAffine(tmp, dst, R, bBox.size());
+    cv::warpAffine(tmp, dst, R, bBox.size(), cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
 
     cv::Mat background = cv::Mat::zeros(HEIGHT, WIDTH, CV_8UC3);
+    background.setTo(cv::Scalar(255,255,255)); // white background
     dst.copyTo(background(cv::Rect((WIDTH-bBox.width)/2, (HEIGHT-bBox.height)/2, dst.cols, dst.rows)));
 
     return background;
