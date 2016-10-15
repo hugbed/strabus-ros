@@ -1,2 +1,0 @@
-byte id
-string command

@@ -1,3 +1,0 @@
-<launch>
-	<node name="led_ring" pkg="led_ring" type="led_ring_node" />
-</launch>
