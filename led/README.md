@@ -3,7 +3,7 @@
 Nodes :
   * led_controller_node : turn on, off and blink up to 2 leds.
 
-#### LED Controller
+## LED Controller node
 
 Start node:
 ```
@@ -21,9 +21,9 @@ roslaunch led_controller led_controller.launch
 ```
 
 
-### Messages format
-## led_controller_command
-# id
+## Messages format
+### led_controller_command
+#### id
 Used to indicate to which LED the command is targetted at:
  * 0: LED 0
  * 1: LED 1
@@ -31,7 +31,7 @@ Used to indicate to which LED the command is targetted at:
 
 Using a different ID will result in the command being ignored.
  
-# command
+#### command
 The actual command:
  * on: turn on the LED
  * off: turn off the LED
@@ -40,5 +40,5 @@ The actual command:
 
 Using a command name will result in the command being ignored.
 
-## led_controller_config
+### led_controller_config
 Not supported for now.
