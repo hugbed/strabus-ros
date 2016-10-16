@@ -38,7 +38,7 @@ The actual command:
  * blink0: set the LED to blink at BLINK0 rate
  * blink1: set the LED to blink at BLINK1 rate
 
-Using a command name will result in the command being ignored.
+Using a different command name will result in the command being ignored.
 
 ### led_controller_config
 Not supported for now.
