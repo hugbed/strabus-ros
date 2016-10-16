@@ -1,8 +1,0 @@
-#goal definition
-int32 targetPos
----
-#result definition
-int32 currentPos
----
-#feedback
-int32 finalPos
