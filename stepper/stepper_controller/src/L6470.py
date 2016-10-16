@@ -24,8 +24,8 @@ class L6470(object):
         MAXMIN_STEP_SPEED_RATIO = 0.065536
 
         # Stepper directions
-        DIR_FORWARD = 0x01
-        DIR_REVERSE = 0x00
+        DIR_CLOCKWISE = 0x01
+        DIR_COUNTER_CLOCKWISE = 0x00
 
         # Register actions
         ACT_RESET = 0x00
@@ -269,7 +269,7 @@ class L6470(object):
         # Run command
         # Speed in in step/s. As a reference, there are 200 steps in a full rotation.
         def run(self, Direction, Speed):
-                if Direction != DIR_FORWARD or Direction != DIR_REVERSE:
+                if Direction != DIR_CLOCKWISE or Direction != DIR_COUNTER_CLOCKWISE:
                         return
                 if Speed <= 0:
                         return
@@ -284,7 +284,7 @@ class L6470(object):
         # In Step-Clock mode, the stepper moves by a microstep on each rising edge of the STCK pin.
         # The Step-Clock mode is aborted by motion commands such as Run, Move and GoTo.
         def stepClock(self, Direction):
-                if Direction != DIR_FORWARD or Direction != DIR_REVERSE:
+                if Direction != DIR_CLOCKWISE or Direction != DIR_COUNTER_CLOCKWISE:
                         return
                         
                 sendCmd(CMD_STEPCLOCK | Direction)
@@ -293,7 +293,7 @@ class L6470(object):
         # Move the stepper by the given number of microsteps in agreement with the selected step mode 
         # (full, half, quarter, etc.).
         def move(self, Direction, Steps):
-                if Direction != DIR_FORWARD or Direction != DIR_REVERSE:
+                if Direction != DIR_CLOCKWISE or Direction != DIR_COUNTER_CLOCKWISE:
                         return
                 if Steps <= 0:
                         return
@@ -319,7 +319,7 @@ class L6470(object):
         # Same ad GoTo, but with a forced rotation direction, which depending on that direction might 
         # not result in the shortest path.
         def goToDir(self, Direction, Position):
-                if Direction != DIR_FORWARD or Direction != DIR_REVERSE:
+                if Direction != DIR_CLOCKWISE or Direction != DIR_COUNTER_CLOCKWISE:
                         return
 
                 # Limit posiition to a 22 bits number
@@ -337,7 +337,7 @@ class L6470(object):
         def goUntil(self, Action, Direction, Speed):
                 if Action != ACT_RESET or Action != ACT_COPY:
                         return
-                if Direction != DIR_FORWARD or Direction != DIR_REVERSE:
+                if Direction != DIR_CLOCKWISE or Direction != DIR_COUNTER_CLOCKWISE:
                         return
                 if Speed <= 0:
                         return
@@ -353,7 +353,7 @@ class L6470(object):
         def releaseSW(self, Action, Direction):
                 if Action != ACT_RESET or Action != ACT_COPY:
                         return
-                if Direction != DIR_FORWARD or Direction != DIR_REVERSE:
+                if Direction != DIR_CLOCKWISE or Direction != DIR_COUNTER_CLOCKWISE:
                         return
                         
                 sendCmd(CMD_RELEASESW | Action | Direction)
