@@ -1,7 +1,9 @@
 <launch>
-	<node name="rostopic_angle" pkg="rostopic" type="rostopic" args="pub /imageAngle image_viewer_fs/Angle 90.0 -r 0.5"/>
-	<node name="rostopic_angle2" pkg="rostopic" type="rostopic" args="pub /imageAngle image_viewer_fs/Angle 45.0 -r 0.25"/>
-	<node name="rostopic_scale" pkg="rostopic" type="rostopic" args="pub /imageScale image_viewer_fs/Scale 1.0 -r 1"/>
-	<node name="rostopic_filename" pkg="rostopic" type="rostopic" args="pub /imageFilename image_viewer_fs/Filename /home/jon/doge.jpg -r 0.5"/>
-	<node name="image_viewer1" pkg="image_viewer_fs" type="image_viewer_fs_node" />
+	<!-- <node name="rostopic_image_show" pkg="rostopic" type="rostopic" args="pub /image/show std_msgs/Bool false -r 0.5"/> -->
+	<node name="rostopic_image_show2" pkg="rostopic" type="rostopic" args="pub /image/show std_msgs/Bool true -r 1.0"/>
+	<node name="rostopic_angle" pkg="rostopic" type="rostopic" args="pub /image/angle std_msgs/Float32 90.0 -r 0.5"/>
+	<node name="rostopic_angle2" pkg="rostopic" type="rostopic" args="pub /image/angle std_msgs/Float32 45.0 -r 0.25"/>
+	<node name="rostopic_scale" pkg="rostopic" type="rostopic" args="pub /image/scale std_msgs/Float32 0.5 -r 1"/>
+	<node name="rostopic_filename" pkg="rostopic" type="rostopic" args="pub /image/filename std_msgs/String doge.jpg -r 0.5"/>
+	<!-- <node name="image_viewer1" pkg="image_viewer_fs" type="image_viewer_fs_node" /> -->
 </launch>

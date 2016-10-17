@@ -3,9 +3,17 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <image_viewer_fs/Angle.h>
-#include <image_viewer_fs/Filename.h>
-#include <image_viewer_fs/Scale.h>
+
+#include <std_msgs/Float32.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
+
+#include "image_viewer_fs/ListImages.h"
+
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
+
+#include <sstream>
 #include <map>
 #include <mutex>
 
@@ -14,11 +22,13 @@ const uint HEIGHT = 240;
 
 float g_scale = 1.0f;
 float g_angle = 90.0f;
+float g_showImage = true;
 std::string g_filename = "";
+std::string g_imageDirectory = "/home/jon/";
 
 std::map<std::string, cv::Mat> g_images;
 std::mutex g_mapMutex; // write: unique access, read: shared access
-
+cv::Mat g_blackBackground = cv::Mat::zeros(HEIGHT, WIDTH, CV_8UC3);
 
 bool imageIsLoaded(std::string filename);
 bool loadImage(std::string filename, cv::Mat &out);
@@ -26,10 +36,16 @@ bool getImage(std::string filename, cv::Mat &out);
 cv::Mat rotate(cv::Mat src, float angle);
 cv::Mat scale(cv::Mat src, float scale);
 bool updateImage(std::string filename);
-void angleCallback(const image_viewer_fs::Angle::ConstPtr& msg);
-void filenameCallback(const image_viewer_fs::Filename::ConstPtr& msg);
-void scaleCallback(const image_viewer_fs::Scale::ConstPtr& msg);
 
+// callbacks
+void angleCallback(const std_msgs::Float32::ConstPtr& msg);
+void filenameCallback(const std_msgs::String::ConstPtr& msg);
+void scaleCallback(const std_msgs::Float32::ConstPtr& msg);
+void imageShowCallback(const std_msgs::Bool::ConstPtr& msg);
+
+// services
+bool listImages(image_viewer_fs::ListImages::Request  &req,
+                image_viewer_fs::ListImages::Response &res);
 
 bool imageIsLoaded(std::string filename)
 {
@@ -41,7 +57,7 @@ bool loadImage(std::string filename, cv::Mat &out)
 {
     // load image if it's not already loaded
     if (!imageIsLoaded(filename)) {
-        out = cv::imread(g_filename, CV_LOAD_IMAGE_COLOR);
+        out = cv::imread(g_imageDirectory + g_filename, CV_LOAD_IMAGE_COLOR);
 
         // insert in dict if loading succeeds
         if (out.data){
@@ -114,8 +130,15 @@ cv::Mat scale(cv::Mat src, float scale)
     return out;
 }
 
-bool updateImage(std::string filename)
-{
+bool updateImage(std::string filename) {
+    // show black background instead
+    if (!g_showImage)
+    {
+        cv::imshow("view", g_blackBackground);
+        cv::waitKey(30);
+        return true;
+    }
+
     cv::Mat image;
     if (getImage(g_filename, image)) {
         cv::imshow("view", rotate(image, g_angle));
@@ -125,44 +148,81 @@ bool updateImage(std::string filename)
     return false;
 }
 
-void angleCallback(const image_viewer_fs::Angle::ConstPtr& msg)
+void angleCallback(const std_msgs::Float32::ConstPtr& msg)
 {
     float oldAngle = g_angle;
-    g_angle = msg->angle;
+    g_angle = msg->data;
 
     if (oldAngle != g_angle) {
         updateImage(g_filename);
     }
 }
 
-void filenameCallback(const image_viewer_fs::Filename::ConstPtr& msg)
+void filenameCallback(const std_msgs::String::ConstPtr& msg)
 {
     std::string oldFilename = g_filename;
-    g_filename = msg->filename;
+    g_filename = msg->data;
 
     if (oldFilename != g_filename) {
         updateImage(g_filename);
     }
 }
 
-void scaleCallback(const image_viewer_fs::Scale::ConstPtr& msg)
+void scaleCallback(const std_msgs::Float32::ConstPtr& msg)
 {
     float oldScale = g_scale;
-    g_scale = std::min(std::max(0.0f, msg->scale), 1.0f);
+    g_scale = std::min(std::max(0.0f, msg->data), 1.0f);
 
     if (oldScale != g_scale) {
         updateImage(g_filename);
     }
 }
 
+void imageShowCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    bool oldShowImage = g_showImage;
+    g_showImage = msg->data;
+
+    if (oldShowImage != g_showImage) {
+        updateImage(g_filename);
+    }
+}
+
+bool listImages(image_viewer_fs::ListImages::Request  &req,
+                image_viewer_fs::ListImages::Response &res)
+{
+    // todo: take the type (req.type) into account
+
+    // check for image directory parameter
+    std::string pathParam;
+    if (ros::param::get("/image/filename/image_directory", pathParam)) {
+        g_imageDirectory = pathParam;
+    }
+
+    std::vector<std::string> files;
+    boost::filesystem::path p(g_imageDirectory);
+    if (boost::filesystem::is_directory(p)) {
+        for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(p), {})) {
+            std::stringstream filepathStream;
+            filepathStream << entry.path().filename();
+            files.push_back(filepathStream.str());
+        }
+    }
+
+    res.imageList = files;
+}
+
 int main(int argc, char **argv)
-    {
+{
     ros::init(argc, argv, "image_viewer_fs");
     ros::NodeHandle nh;
 
-    ros::Subscriber angleSub = nh.subscribe("imageAngle", 1000, angleCallback);
-    ros::Subscriber filenameSub = nh.subscribe("imageFilename", 1000, filenameCallback);
-    ros::Subscriber scaleSub = nh.subscribe("imageScale", 1000, scaleCallback);
+    ros::Subscriber angleSub = nh.subscribe("image/angle", 1000, angleCallback);
+    ros::Subscriber filenameSub = nh.subscribe("image/filename", 1000, filenameCallback);
+    ros::Subscriber scaleSub = nh.subscribe("image/scale", 1000, scaleCallback);
+    ros::Subscriber imageShowSub = nh.subscribe("image/show", 1000, imageShowCallback);
+
+    ros::ServiceServer listImagesService = nh.advertiseService("list_images", listImages);
 
     cv::namedWindow("view", CV_WINDOW_NORMAL);
     cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);

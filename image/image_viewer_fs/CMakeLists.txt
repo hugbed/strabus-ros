@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(message_generation)
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -49,19 +49,16 @@ find_package(message_generation)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  Angle.msg
-  Scale.msg
-  Filename.msg
-)
+#add_message_files(
+#  FILES
+#  Message1.msg
+#)
 
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+# Generate services in the 'srv' folder
+add_service_files(
+  FILES
+  ListImages.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
