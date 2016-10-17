@@ -5,5 +5,5 @@
 	<node name="rostopic_angle2" pkg="rostopic" type="rostopic" args="pub /image/angle std_msgs/Float32 45.0 -r 0.25"/>
 	<node name="rostopic_scale" pkg="rostopic" type="rostopic" args="pub /image/scale std_msgs/Float32 0.5 -r 1"/>
 	<node name="rostopic_filename" pkg="rostopic" type="rostopic" args="pub /image/filename std_msgs/String doge.jpg -r 0.5"/>
-	<!-- <node name="image_viewer1" pkg="image_viewer_fs" type="image_viewer_fs_node" /> -->
+	<node name="image_viewer1" pkg="image_viewer_fs" type="image_viewer_fs_node" />
 </launch>
