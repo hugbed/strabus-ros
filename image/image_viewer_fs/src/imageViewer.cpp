@@ -8,11 +8,6 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
 
-#include "image_viewer_fs/ListImages.h"
-
-#include <boost/filesystem.hpp>
-#include <boost/range/iterator_range.hpp>
-
 #include <sstream>
 #include <map>
 #include <mutex>
@@ -24,7 +19,9 @@ float g_scale = 1.0f;
 float g_angle = 90.0f;
 float g_showImage = true;
 std::string g_filename = "";
-std::string g_imageDirectory = "/home/jon/";
+std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/img/app/img/";
+
+std::string g_nodeName = "";
 
 std::map<std::string, cv::Mat> g_images;
 std::mutex g_mapMutex; // write: unique access, read: shared access
@@ -42,10 +39,6 @@ void angleCallback(const std_msgs::Float32::ConstPtr& msg);
 void filenameCallback(const std_msgs::String::ConstPtr& msg);
 void scaleCallback(const std_msgs::Float32::ConstPtr& msg);
 void imageShowCallback(const std_msgs::Bool::ConstPtr& msg);
-
-// services
-bool listImages(image_viewer_fs::ListImages::Request  &req,
-                image_viewer_fs::ListImages::Response &res);
 
 bool imageIsLoaded(std::string filename)
 {
@@ -188,41 +181,15 @@ void imageShowCallback(const std_msgs::Bool::ConstPtr& msg)
     }
 }
 
-bool listImages(image_viewer_fs::ListImages::Request  &req,
-                image_viewer_fs::ListImages::Response &res)
-{
-    // todo: take the type (req.type) into account
-
-    // check for image directory parameter
-    std::string pathParam;
-    if (ros::param::get("/image/filename/image_directory", pathParam)) {
-        g_imageDirectory = pathParam;
-    }
-
-    std::vector<std::string> files;
-    boost::filesystem::path p(g_imageDirectory);
-    if (boost::filesystem::is_directory(p)) {
-        for (auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(p), {})) {
-            std::stringstream filepathStream;
-            filepathStream << entry.path().filename();
-            files.push_back(filepathStream.str());
-        }
-    }
-
-    res.imageList = files;
-}
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "image_viewer_fs");
     ros::NodeHandle nh;
 
-    ros::Subscriber angleSub = nh.subscribe("image/angle", 1000, angleCallback);
-    ros::Subscriber filenameSub = nh.subscribe("image/filename", 1000, filenameCallback);
-    ros::Subscriber scaleSub = nh.subscribe("image/scale", 1000, scaleCallback);
-    ros::Subscriber imageShowSub = nh.subscribe("image/show", 1000, imageShowCallback);
-
-    ros::ServiceServer listImagesService = nh.advertiseService("list_images", listImages);
+    ros::Subscriber angleSub = nh.subscribe(g_nodeName + "angle", 1000, angleCallback);
+    ros::Subscriber filenameSub = nh.subscribe(g_nodeName + "filename", 1000, filenameCallback);
+    ros::Subscriber scaleSub = nh.subscribe(g_nodeName + "scale", 1000, scaleCallback);
+    ros::Subscriber imageShowSub = nh.subscribe(g_nodeName + "show", 1000, imageShowCallback);
 
     cv::namedWindow("view", CV_WINDOW_NORMAL);
     cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
