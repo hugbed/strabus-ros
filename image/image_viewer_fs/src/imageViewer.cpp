@@ -19,7 +19,8 @@ float g_scale = 1.0f;
 float g_angle = 90.0f;
 float g_showImage = true;
 std::string g_filename = "";
-std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/img/app/img/";
+//std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/img/app/img/";
+std::string g_imageDirectory = "/home/jon/";
 
 std::string g_nodeName = "";
 
