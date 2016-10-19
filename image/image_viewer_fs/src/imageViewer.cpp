@@ -189,6 +189,12 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "image_viewer_fs");
     ros::NodeHandle nh;
 
+    std::string imageDirectory;
+    if (nh.getParam("image_directory", imageDirectory)) {
+        g_imageDirectory = imageDirectory;
+    }
+    ROS_INFO("Image directory : %s\n", g_imageDirectory.c_str());
+
     ros::Subscriber angleSub = nh.subscribe(g_nodeName + "angle", 1000, angleCallback);
     ros::Subscriber filenameSub = nh.subscribe(g_nodeName + "filename", 1000, filenameCallback);
     ros::Subscriber scaleSub = nh.subscribe(g_nodeName + "scale", 1000, scaleCallback);
