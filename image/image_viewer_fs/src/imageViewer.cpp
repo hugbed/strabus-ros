@@ -19,8 +19,8 @@ float g_scale = 1.0f;
 float g_angle = 90.0f;
 float g_showImage = true;
 std::string g_filename = "";
-//std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/img/app/img/";
-std::string g_imageDirectory = "/home/jon/";
+std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/app/img/";
+//std::string g_imageDirectory = "/home/jon/";
 
 std::string g_nodeName = "";
 
@@ -49,6 +49,8 @@ bool imageIsLoaded(std::string filename)
 
 bool loadImage(std::string filename, cv::Mat &out)
 {
+    ROS_INFO("Loading image, %s", (g_imageDirectory + g_filename).c_str());
+
     // load image if it's not already loaded
     if (!imageIsLoaded(filename)) {
         out = cv::imread(g_imageDirectory + g_filename, CV_LOAD_IMAGE_COLOR);
