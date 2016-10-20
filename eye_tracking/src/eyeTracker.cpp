@@ -19,7 +19,7 @@ static const std::string OPENCV_WINDOW = "Debug window";
 EyeTracker::EyeTracker()
         : it_(nh_) {
     // Subscrive to input video feed and publish output video feed
-    image_sub_ = it_.subscribe("/camera/image", 1,
+    image_sub_ = it_.subscribe("/usb_cam/image_raw", 1,
                                &EyeTracker::frameCallback, this);
     image_pub_ = it_.advertise("/tracking/eye_tracking_feed", 1);
     position_pub_ = nh_.advertise<eye_tracking::Position>("/tracking/position", 1);
@@ -63,13 +63,13 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
         cv::split(frame, rgbChannels);
         cvtColor(frame, frame_gray, CV_BGR2GRAY);
         equalizeHist(frame_gray, frame_gray);
-        float confidence = 0.5;
+        float confidence = 0.2;
         cv::Point position = findEyeCenter(frame_gray, "Test", &confidence);
         //circle(frame_gray, position, 5, 1234);
 
         cv::Point filteredPos = filter.filterPosition(position, confidence);
 
-        circle(frame_gray, filteredPos, 1, 1234);
+        circle(frame_gray, filteredPos, 4, 1234);
 
         eye_tracking::Position p;
         p.x_pos = position.x;
@@ -79,7 +79,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
         fp.x_pos = filteredPos.x;
         fp.y_pos = filteredPos.y;
 
-        eye_tracking::Position offset = getOffset(position, frame);
+        eye_tracking::Position offset = getOffset(filteredPos, frame);
         // Update GUI Window
 
         //delete &cv_ptr->image;
