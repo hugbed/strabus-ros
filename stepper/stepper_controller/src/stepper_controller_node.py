@@ -4,15 +4,18 @@
 import rospy
 
 # Stepper generated messages.
-import stepper_controller.msg
+from stepper_controller.msg import Run
+from stepper_controller.msg import Move
+from stepper_controller.msg import GoTo
+from stepper_controller.msg import Stop
 
 # Controller library.
-import L6470 from L6470
+from L6470_pkg.L6470_lib import L6470
 
 # Callback used to run the stepper in the given direction and at the given speed.
 # The stepper will run until a stop command is issued or until a limit switch is hit.
 def runCallback(run):
-    rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (run.speed, run.direction)
+    rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (run.speed, run.direction))
 
     # Run the stepper if the direction is appropriate.
     if (run.direction == "clockwise"):
