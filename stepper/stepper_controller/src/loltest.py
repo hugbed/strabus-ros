@@ -13,13 +13,18 @@ if __name__ == '__main__':
     
     # Configure SPI
     device.bits_per_word = 8
-    device.max_speed_hz = 5000000
+    device.max_speed_hz = 1000000
     device.mode = 0b11
     
-    sendCmd3(, 400)
-    bytes = [0x41, 0x00, 0x01, 0x90]
-    device.xfer2(bytes)
+    # Read register MAX_SPEED with 3 nops for response.
+    request = [0x27, 0x00, 0x00, 0x00]
+    responseBytes = device.xfer2(request)
     
-    sleep(3)
+    # Return only useful 3 bytes.
+    response = responseBytes[3]
+    response = Response | responseBytes[2] << 8
+    response = Response | responseBytes[1] << 16
+    
+    print "Max speed: %d" % (response)
     
     device.close()
