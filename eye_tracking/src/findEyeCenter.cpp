@@ -27,16 +27,20 @@ void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
   cv::resize(src, dst, cv::Size(FAST_EYE_WIDTH,(((float)FAST_EYE_WIDTH)/src.cols) * src.rows));
 }
 
-cv::Mat computeMatXGradient(const cv::Mat &mat) {
+cv::Mat computeMatXGradient(const cv::Mat &mat, cv::Mat mask) {
   cv::Mat out(mat.rows,mat.cols,CV_64F);
-  
+  out = cv::Scalar(0);
   for (int y = 0; y < mat.rows; ++y) {
     const uchar *Mr = mat.ptr<uchar>(y);
     double *Or = out.ptr<double>(y);
-    
-    Or[0] = Mr[1] - Mr[0];
+    uint8_t *maskRow = mask.ptr<uint8_t>(y);
+    //Or[0] = Mr[1] - Mr[0];
     for (int x = 1; x < mat.cols - 1; ++x) {
-      Or[x] = (Mr[x+1] - Mr[x-1])/2.0;
+      if (maskRow[x+10] <255 || maskRow[x-10] <255 ){
+       // continue;
+      }
+      Or[x] = (Mr[x + 1] - Mr[x - 1]) / 2.0;
+
     }
     Or[mat.cols-1] = Mr[mat.cols-1] - Mr[mat.cols-2];
   }
@@ -46,15 +50,24 @@ cv::Mat computeMatXGradient(const cv::Mat &mat) {
 
 #pragma mark Main Algorithm
 
-void testPossibleCentersFormula(int x, int y, const cv::Mat &weight,double gx, double gy, cv::Mat &out) {
+void testPossibleCentersFormula(int x, int y, const cv::Mat &weight,double gx, double gy, cv::Mat &out, cv::Mat &mask, cv::Mat &ref, int &numMultiplications) {
   // for all possible centers
   for (int cy = 0; cy < out.rows; ++cy) {
     double *Or = out.ptr<double>(cy);
+    uint8_t *refRow = ref.ptr<uint8_t>(cy);
+    uint8_t *maskRow = mask.ptr<uint8_t>(cy);
     const unsigned char *Wr = weight.ptr<unsigned char>(cy);
     for (int cx = 0; cx < out.cols; ++cx) {
+      if (maskRow[cx] <255){
+        continue;
+      }
       if (x == cx && y == cy) {
         continue;
       }
+      if (refRow[cx] > 50){
+        continue;
+      }
+
       // create a vector from the possible center to the gradient origin
       double dx = x - cx;
       double dy = y - cy;
@@ -72,18 +85,49 @@ void testPossibleCentersFormula(int x, int y, const cv::Mat &weight,double gx, d
       } else {
         Or[cx] += dotProduct * dotProduct;
       }
+      numMultiplications ++;
     }
   }
 }
 
 cv::Point findEyeCenter(cv::Mat eye, std::string debugWindow, float* confidence) {
-
   cv::Mat eyeROI;
   scaleToFastSize(eye, eyeROI);
+
+  //Create mask
+  cv::Mat mask(eyeROI.size(), eyeROI.type());
+  mask = cv::Scalar(0);
+  cv::circle(mask, cv::Point(eyeROI.cols/2, eyeROI.rows/2), (int) eyeROI.cols/5, 1234, -1);
+  cv::imshow("mask",mask);
+  int sum = 0;
+  for (int y = 0; y < eyeROI.rows; ++y) {
+    uint8_t *eyeRow = eyeROI.ptr<uint8_t>(y);
+    uint8_t *maskRow = mask.ptr<uint8_t>(y);
+    for (int x = 0; x < eyeROI.cols; ++x) {
+      if (maskRow[x] >0){
+        continue;
+      }
+      sum = sum + eyeRow[x];
+    }
+  }
+  int averageBrightness = sum/(eyeROI.rows * eyeROI.cols);
+
+  for (int y = 0; y < eyeROI.rows; ++y) {
+    uint8_t *eyeRow = eyeROI.ptr<uint8_t>(y);
+    uint8_t *maskRow = mask.ptr<uint8_t>(y);
+    for (int x = 0; x < eyeROI.cols; ++x) {
+      if (maskRow[x] >0){
+        continue;
+      }
+      eyeRow[x] = averageBrightness;
+    }
+  }
+  equalizeHist(eyeROI, eyeROI);
+
   // draw eye region
   //-- Fd the gradient
-  cv::Mat gradientX = computeMatXGradient(eyeROI);
-  cv::Mat gradientY = computeMatXGradient(eyeROI.t()).t();
+  cv::Mat gradientX = computeMatXGradient(eyeROI, mask);
+  cv::Mat gradientY = computeMatXGradient(eyeROI.t(), mask.t()).t();
   //-- Normalize and threshold the gradient
   // compute all the magnitudes
   cv::Mat mags = matrixMagnitude(gradientX, gradientY);
@@ -93,9 +137,14 @@ cv::Point findEyeCenter(cv::Mat eye, std::string debugWindow, float* confidence)
   for (int y = 0; y < eyeROI.rows; ++y) {
     double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
     const double *Mr = mags.ptr<double>(y);
+    uint8_t *maskRow = mask.ptr<uint8_t>(y);
     for (int x = 0; x < eyeROI.cols; ++x) {
+      if (maskRow[x] <255){
+        continue;
+      }
       double gX = Xr[x], gY = Yr[x];
       double magnitude = Mr[x];
+
       if (magnitude > gradientThresh) {
         Xr[x] = gX/magnitude;
         Yr[x] = gY/magnitude;
@@ -123,22 +172,36 @@ cv::Point findEyeCenter(cv::Mat eye, std::string debugWindow, float* confidence)
   // Note: these loops are reversed from the way the paper does them
   // it evaluates every possible center for each gradient location instead of
   // every possible gradient location for every center.
-  //printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+  //
+  int numMultiplications = 0;
   for (int y = 0; y < weight.rows; ++y) {
     const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+    uint8_t *maskRow = mask.ptr<uint8_t>(y);
     for (int x = 0; x < weight.cols; ++x) {
       double gX = Xr[x], gY = Yr[x];
+      if (maskRow[x] <255){
+        continue;
+      }
       if (gX == 0.0 && gY == 0.0) {
         continue;
       }
-      testPossibleCentersFormula(x, y, weight, gX, gY, outSum);
+      testPossibleCentersFormula(x, y, weight, gX, gY, outSum, mask,eyeROI, numMultiplications);
     }
   }
+
+  printf("EyeRoi dims: %ix%i\n",eyeROI.cols, eyeROI.rows);
+  printf("OUT dims: %ix%i\n",outSum.cols, outSum.rows);
+  printf("Number of multiplications: %i\n",numMultiplications);
+
+
   // scale all the values down, basically averaging them
   double numGradients = (weight.rows*weight.cols);
   cv::Mat out;
-  outSum.convertTo(out, CV_32F,1.0/numGradients);
-  //imshow(debugWindow,out);
+  outSum.convertTo(out, CV_32F,0.1/numGradients);
+  cv::imshow("EyeROI",eyeROI);
+  cv::imshow("GradientX",gradientX);
+  cv::imshow("GradientY",gradientX);
+  cv::imshow("Centers",out);
   //-- Find the maximum point
   cv::Point maxP;
   double maxVal;
