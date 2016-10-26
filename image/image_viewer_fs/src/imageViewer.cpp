@@ -20,9 +20,6 @@ float g_angle = 90.0f;
 float g_showImage = true;
 std::string g_filename = "";
 std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/app/img/";
-//std::string g_imageDirectory = "/home/jon/";
-
-std::string g_nodeName = "";
 
 std::map<std::string, cv::Mat> g_images;
 std::mutex g_mapMutex; // write: unique access, read: shared access
@@ -195,10 +192,10 @@ int main(int argc, char **argv)
     }
     ROS_INFO("Image directory : %s\n", g_imageDirectory.c_str());
 
-    ros::Subscriber angleSub = nh.subscribe(g_nodeName + "angle", 1000, angleCallback);
-    ros::Subscriber filenameSub = nh.subscribe(g_nodeName + "filename", 1000, filenameCallback);
-    ros::Subscriber scaleSub = nh.subscribe(g_nodeName + "scale", 1000, scaleCallback);
-    ros::Subscriber imageShowSub = nh.subscribe(g_nodeName + "show", 1000, imageShowCallback);
+    ros::Subscriber angleSub = nh.subscribe("angle", 1000, angleCallback);
+    ros::Subscriber filenameSub = nh.subscribe("filename", 1000, filenameCallback);
+    ros::Subscriber scaleSub = nh.subscribe("scale", 1000, scaleCallback);
+    ros::Subscriber imageShowSub = nh.subscribe("show", 1000, imageShowCallback);
 
     cv::namedWindow("view", CV_WINDOW_NORMAL);
     cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
