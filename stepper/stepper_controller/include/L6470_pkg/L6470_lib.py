@@ -166,17 +166,17 @@ class L6470(object):
         response = self._SPI.xfer2(request)
         responseValue = 0x000000
         
-		request = [param2]
-		response = self._SPI.xfer2(request)
-		responseValue = responseValue | (response << 16)
-		
-		request = [param1]
-		response = self._SPI.xfer2(request)
-		responseValue = responseValue | (response << 8)
-		
-		request = [param0]
-		response = self._SPI.xfer2(request)
-		responseValue = responseValue | response
+        request = [param2]
+        response = self._SPI.xfer2(request)
+        responseValue = responseValue | (response << 16)
+        
+        request = [param1]
+        response = self._SPI.xfer2(request)
+        responseValue = responseValue | (response << 8)
+        
+        request = [param0]
+        response = self._SPI.xfer2(request)
+        responseValue = responseValue | response
         
         return responseValue
 
@@ -283,9 +283,9 @@ class L6470(object):
     def run(self, Direction, Speed):
         if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
             print "L6470.run: Invalid direction %d" % (Direction)
-			return
+            return
         if Speed <= 0:
-			print "L6470.run: Invalid speed %d" % (Speed)
+            print "L6470.run: Invalid speed %d" % (Speed)
             return
 
         # Convert from step/s to step/tick
