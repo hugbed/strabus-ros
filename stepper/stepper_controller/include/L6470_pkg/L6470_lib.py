@@ -134,7 +134,7 @@ class L6470(object):
         
         # Configure SPI
         self._SPI.bits_per_word = 8
-        self._SPI.max_speed_hz = 5000000
+        self._SPI.max_speed_hz = 100000
         self._SPI.mode = 0b11
 
     # Close
@@ -168,15 +168,15 @@ class L6470(object):
         
         request = [param2]
         response = self._SPI.xfer2(request)
-        responseValue = responseValue | (response << 16)
+        responseValue = responseValue | (response[0] << 16)
         
         request = [param1]
         response = self._SPI.xfer2(request)
-        responseValue = responseValue | (response << 8)
+        responseValue = responseValue | (response[0] << 8)
         
         request = [param0]
         response = self._SPI.xfer2(request)
-        responseValue = responseValue | response
+        responseValue = responseValue | response[0]
         
         return responseValue
 
@@ -259,8 +259,8 @@ class L6470(object):
     # SetParam command
     # Set the given register to the given value.
     def setParam(self, Param, Value):
-        # Only accept Param as a 4 bits number.
-        if Param > 0x0F:
+        # Only accept Param as a 5 bits number.
+        if Param > 0x1F:
             return
 
         # Limit Value to a 24 bits number.
@@ -272,8 +272,8 @@ class L6470(object):
     # GetParam command
     # Obtain the value contained in the given register.
     def getParam(self, Param):
-        # Only accept Param as a 4 bits number.
-        if Param > 0x0F:
+        # Only accept Param as a 5 bits number.
+        if Param > 0x1F:
             return
 
         return self.sendCmd3(self.CMD_GETPARAM | Param, 0x000000)
@@ -316,7 +316,7 @@ class L6470(object):
         if Steps > 0x003FFFFF:
             Steps = 0x003FFFFF
         
-        self.sendCmd3(self.CMD_MOVE | Direction, Steps)
+        self.sendCmd3(self.CMD_MOVE | Direction, int(Steps))
 
     # GoTo command
     # Move the stepper to the given absolute position in agreement with the selected step mode 
@@ -327,7 +327,7 @@ class L6470(object):
         if Position > 0x003FFFFF:
             Position = 0x003FFFFF
         
-        self.sendCmd3(self.CMD_GOTO, Position)
+        self.sendCmd3(self.CMD_GOTO, int(Position))
 
     # GoToDir command
     # Same ad GoTo, but with a forced rotation direction, which depending on that direction might 
@@ -340,7 +340,7 @@ class L6470(object):
         if Position > 0x003FFFFF:
             Position = 0x003FFFFF
         
-        self.sendCmd3(self.CMD_GOTODIR | Direction, Position)
+        self.sendCmd3(self.CMD_GOTODIR | Direction, int(Position))
 
     # GoUntil command
     # Move the stepper at the given speed until a falling edge is detected on the SW pin of the 
