@@ -15,27 +15,29 @@ from L6470_pkg.L6470_lib import L6470
 # Callback used to run the stepper in the given direction and at the given speed.
 # The stepper will run until a stop command is issued or until a limit switch is hit.
 def runCallback(run):
-    rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (run.speed, run.direction))
-
+    if (run.direction == "clockwise" or run.direction == "counter-clockwise"):
+        rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (run.speed, run.direction))
+    else:
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized run direction for \"%s\"" % (run.direction))
+    
     # Run the stepper if the direction is appropriate.
     if (run.direction == "clockwise"):
         _controller.run(L6470.DIR_CLOCKWISE, run.speed)
     elif (run.direction == "counter-clockwise"):
         _controller.run(L6470.DIR_COUNTER_CLOCKWISE, run.speed)
-    else:
-        return
     
 # Callback used to move the stepper by the given number of microsteps.
 def moveCallback(move):
-    rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s rotation" % (move.steps, move.direction))
-
+    if (move.direction == "clockwise" or move.direction == "counter-clockwise"):
+        rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s rotation" % (move.steps, move.direction))
+    else:
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized move direction for \"%s\"" % (move.direction))
+    
     # Issue a Move command to the stepper if the direction is appropriate.
     if (move.direction == "clockwise"):
         _controller.move(L6470.DIR_CLOCKWISE, move.steps)
     elif (move.direction == "counter-clockwise"):
         _controller.move(L6470.DIR_COUNTER_CLOCKWISE, move.steps)
-    else:
-        return
 
 # Callback used to move the stepper to the given position.
 def goToCallback(goTo):
@@ -46,15 +48,16 @@ def goToCallback(goTo):
     
 # Callback used to stop the stepper, either immediately or after a deceleration curve.
 def stopCallback(stop):
-    rospy.loginfo(rospy.get_caller_id() + ": %s stop" % (stop.type))
+    if (stop.type == "hard" or stop.type == "soft"):
+        rospy.loginfo(rospy.get_caller_id() + ": %s stop" % (stop.type))
+    else:
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized stop type for \"%s\"" % (stop.type))
 
     # Issue a stop command to the stepper.
     if (stop.type == "hard"):
         _controller.hardStop()
     elif (stop.type == "soft"):
         _controller.softStop()
-    else:
-        return
 
 # Main node function.
 if __name__ == '__main__':
