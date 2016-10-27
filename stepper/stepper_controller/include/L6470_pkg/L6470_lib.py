@@ -150,7 +150,7 @@ class L6470(object):
     def sendCmd(self, command):
         # Send command byte to the controller.
         byte = [command]
-		self._SPI.xfer2(byte)
+        self._SPI.xfer2(byte)
 
     # Send a command with the parameter split in 3 bytes and obtain the response in 3 bytes.
     def sendCmd3(self, command, param):
