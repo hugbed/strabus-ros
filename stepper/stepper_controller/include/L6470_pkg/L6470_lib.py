@@ -3,124 +3,124 @@
 import spidev
 
 class L6470(object):
-	# ==============================================================================================
-	# Useful calculation constants 
-	# ==============================================================================================
-	# Stepping specs
-	ROTATION_STEPS = 200
-	TICK = 250 * 10**-9
-	SCALE = 2**-18
-
-	# Ratio value used to convert an acceleration from step/s^2 to step/tick^2.
-	# step/tick^2 = STEP_ACC_RATIO * step/s^2
-	STEP_ACC_RATIO = 0.068719
-
-	# Ratio value used to convert a speed from step/s to step/tick.
-	# step/tick = STEP_SPEED_RATIO * step/s
-	STEP_SPEED_RATIO = 67.108864
-
-	# Ratio value used to convert a max or min speed from step/s to step/tick.
-	# step/tick = MAXMIN_STEP_SPEED_RATIO * step/s
-	MAXMIN_STEP_SPEED_RATIO = 0.065536
-
-	# Stepper directions
-	DIR_CLOCKWISE = 0x01
-	DIR_COUNTER_CLOCKWISE = 0x00
-
-	# Register actions
-	ACT_RESET = 0x00
-	ACT_COPY  = 0x08
-
-	# ==============================================================================================
-	# Stepper commands
-	# The parameters that appear in the Cmd byte must be added to these base command values.
-	# ==============================================================================================
-	CMD_NOP         = 0x00
-	CMD_SETPARAM    = 0x00
-	CMD_GETPARAM    = 0x20
-	CMD_RUN         = 0x50
-	CMD_STEPCLOCK   = 0x58
-	CMD_MOVE        = 0x40
-	CMD_GOTO        = 0x60
-	CMD_GOTODIR     = 0x68
-	CMD_GOUNTIL     = 0x82
-	CMD_RELEASESW   = 0x92
-	CMD_GOHOME      = 0x70
-	CMD_GOMARK      = 0x78
-	CMD_RESETPOS    = 0xD8
-	CMD_RESETDEVICE = 0xC0
-	CMD_SOFTSTOP    = 0xB0
-	CMD_HARDSTOP    = 0xB8
-	CMD_SOFTHIZ     = 0xA0
-	CMD_HARDHIZ     = 0xA8
-	CMD_GETSTATUS   = 0xD0
-
-	# ==============================================================================================
-	# Stepper registers
-	# ==============================================================================================
-	REG_ABS_POS   = 0x01
-	REG_MARK	  = 0x03
-	REG_SPEED     = 0x04
-	REG_ACC		  = 0x05
-	REG_DEC		  = 0x06
-	REG_MAX_SPEED = 0x07
-	REG_MIN_SPEED = 0x08
-	REG_FS_SPD	  = 0x15
-	REG_STEP_MODE = 0x16
-	REG_ALARM_EN  = 0x17
-	REG_CONFIG    = 0x18
-	REG_STATUS	  = 0x19
-
-	# ==============================================================================================
-	# Step mode values
-	# ==============================================================================================
-	# The SYNC_EN field enables (or disables) a clock signal on the BUSY/SYNC pin at the 
-	# frequency defined by the SYNC_SEL field.
-	STEP_MODE_SYNC_EN_MASK = 0x80
-	STEP_MODE_SYNC_EN 	   = 0x80
-
-	# STEP_SEL values mask.
-	STEP_MODE_SYNC_SEL_MASK = 0x70
-
-	# Possible values for the SYNC_SEL field of the STEP_MODE register.
-	# The numbers represent a multiplicand for the FS frequency (ex.: 8 * FS).
-	SYNC_SEL_HALF = 0x00
-	SYNC_SEL_1    = 0x01
-	SYNC_SEL_2    = 0x02
-	SYNC_SEL_4	  = 0x03
-	SYNC_SEL_8    = 0x04
-	SYNC_SEL_16   = 0x05
-	SYNC_SEL_32   = 0x06
-	SYNC_SEL_64   = 0x07
-
-	# Mask for the bits of the STEP_SEL field in the STEP_MODE register.
-	STEP_MODE_STEP_SEL_MASK = 0x07
-
-	# Possible values for the STEP_SEL field of the STEP_MODE register.
-	# The numbers represent the fraction of step (ex.: 1/32 microstep).
-	STEP_SEL_FULL = 0x00
-	STEP_SEL_HALF = 0x01
-	STEP_SEL_4    = 0x02
-	STEP_SEL_8	  = 0x03
-	STEP_SEL_16   = 0x04
-	STEP_SEL_32   = 0x05
-	STEP_SEL_64   = 0x06
-	STEP_SEL_128  = 0x07
-
-	# ==============================================================================================
-	# Alarm values
-	# ==============================================================================================
-	# The ALARM_EN register can be used to configure which alarms are active.
-	# The alarm configuration fits on a single bit, so every bit represents a single alarm.
-	ALARM_EN_MASK = 0xFF
-	ALARM_OVERCURRENT 	    = 0x01
-	ALARM_THERMAL_SHUTDOWN  = 0x02
-	ALARM_THERMAL_WARNING   = 0x04
-	ALARM_UNDERVOLTAGE      = 0x08
-	ALARM_STALL_DETECTION_A = 0x10
-	ALARM_STALL_DETECTION_B = 0x20
-	ALARM_SWITCH_TURN_ON    = 0x40
-	ALARM_WRONG_IGNORED_CMD = 0x80
+    # ==============================================================================================
+    # Useful calculation constants 
+    # ==============================================================================================
+    # Stepping specs
+    ROTATION_STEPS = 200
+    TICK = 250 * 10 ** -9
+    SCALE = 2 ** -18
+    
+    # Ratio value used to convert an acceleration from step/s^2 to step/tick^2.
+    # step/tick^2 = STEP_ACC_RATIO * step/s^2
+    STEP_ACC_RATIO = 0.068719
+    
+    # Ratio value used to convert a speed from step/s to step/tick.
+    # step/tick = STEP_SPEED_RATIO * step/s
+    STEP_SPEED_RATIO = 67.108864
+    
+    # Ratio value used to convert a max or min speed from step/s to step/tick.
+    # step/tick = MAXMIN_STEP_SPEED_RATIO * step/s
+    MAXMIN_STEP_SPEED_RATIO = 0.065536
+    
+    # Stepper directions
+    DIR_CLOCKWISE = 0x01
+    DIR_COUNTER_CLOCKWISE = 0x00
+    
+    # Register actions
+    ACT_RESET = 0x00
+    ACT_COPY = 0x08
+    
+    # ==============================================================================================
+    # Stepper commands
+    # The parameters that appear in the Cmd byte must be added to these base command values.
+    # ==============================================================================================
+    CMD_NOP = 0x00
+    CMD_SETPARAM = 0x00
+    CMD_GETPARAM = 0x20
+    CMD_RUN = 0x50
+    CMD_STEPCLOCK = 0x58
+    CMD_MOVE = 0x40
+    CMD_GOTO = 0x60
+    CMD_GOTODIR = 0x68
+    CMD_GOUNTIL = 0x82
+    CMD_RELEASESW = 0x92
+    CMD_GOHOME = 0x70
+    CMD_GOMARK = 0x78
+    CMD_RESETPOS = 0xD8
+    CMD_RESETDEVICE = 0xC0
+    CMD_SOFTSTOP = 0xB0
+    CMD_HARDSTOP = 0xB8
+    CMD_SOFTHIZ = 0xA0
+    CMD_HARDHIZ = 0xA8
+    CMD_GETSTATUS = 0xD0
+    
+    # ==============================================================================================
+    # Stepper registers
+    # ==============================================================================================
+    REG_ABS_POS = 0x01
+    REG_MARK	 = 0x03
+    REG_SPEED = 0x04
+    REG_ACC		 = 0x05
+    REG_DEC		 = 0x06
+    REG_MAX_SPEED = 0x07
+    REG_MIN_SPEED = 0x08
+    REG_FS_SPD	 = 0x15
+    REG_STEP_MODE = 0x16
+    REG_ALARM_EN = 0x17
+    REG_CONFIG = 0x18
+    REG_STATUS	 = 0x19
+    
+    # ==============================================================================================
+    # Step mode values
+    # ==============================================================================================
+    # The SYNC_EN field enables (or disables) a clock signal on the BUSY/SYNC pin at the 
+    # frequency defined by the SYNC_SEL field.
+    STEP_MODE_SYNC_EN_MASK = 0x80
+    STEP_MODE_SYNC_EN 	 = 0x80
+    
+    # STEP_SEL values mask.
+    STEP_MODE_SYNC_SEL_MASK = 0x70
+    
+    # Possible values for the SYNC_SEL field of the STEP_MODE register.
+    # The numbers represent a multiplicand for the FS frequency (ex.: 8 * FS).
+    SYNC_SEL_HALF = 0x00
+    SYNC_SEL_1 = 0x01
+    SYNC_SEL_2 = 0x02
+    SYNC_SEL_4	 = 0x03
+    SYNC_SEL_8 = 0x04
+    SYNC_SEL_16 = 0x05
+    SYNC_SEL_32 = 0x06
+    SYNC_SEL_64 = 0x07
+    
+    # Mask for the bits of the STEP_SEL field in the STEP_MODE register.
+    STEP_MODE_STEP_SEL_MASK = 0x07
+    
+    # Possible values for the STEP_SEL field of the STEP_MODE register.
+    # The numbers represent the fraction of step (ex.: 1/32 microstep).
+    STEP_SEL_FULL = 0x00
+    STEP_SEL_HALF = 0x01
+    STEP_SEL_4 = 0x02
+    STEP_SEL_8	 = 0x03
+    STEP_SEL_16 = 0x04
+    STEP_SEL_32 = 0x05
+    STEP_SEL_64 = 0x06
+    STEP_SEL_128 = 0x07
+    
+    # ==============================================================================================
+    # Alarm values
+    # ==============================================================================================
+    # The ALARM_EN register can be used to configure which alarms are active.
+    # The alarm configuration fits on a single bit, so every bit represents a single alarm.
+    ALARM_EN_MASK = 0xFF
+    ALARM_OVERCURRENT 	 = 0x01
+    ALARM_THERMAL_SHUTDOWN = 0x02
+    ALARM_THERMAL_WARNING = 0x04
+    ALARM_UNDERVOLTAGE = 0x08
+    ALARM_STALL_DETECTION_A = 0x10
+    ALARM_STALL_DETECTION_B = 0x20
+    ALARM_SWITCH_TURN_ON = 0x40
+    ALARM_WRONG_IGNORED_CMD = 0x80
 
     # ==============================================================================================
     # Open and close functions.
@@ -131,7 +131,7 @@ class L6470(object):
         # Open the given SPI device
         self._SPI = spidev.SpiDev()
         self._SPI.open(Bus, Device)
-
+        
         # Configure SPI
         self._SPI.bits_per_word = 8
         self._SPI.max_speed_hz = 5000000
@@ -434,8 +434,8 @@ class L6470(object):
         Pos = self.getParam(self.REG_ABS_POS)
         
         # Convert to int value.
-        if Pos & (1 << 21):			# If sign bit is set:
-            Pos = Pos - (1 << 22)	# Compute negative value.
+        if Pos & (1 << 21):  # If sign bit is set:
+            Pos = Pos - (1 << 22)  # Compute negative value.
                 
         return Pos
 
@@ -447,8 +447,8 @@ class L6470(object):
         Mark = self.getParam(self.REG_MARK)
         
         # Convert to int value.
-        if Mark & (1 << 21):		# If sign bit is set:
-            Mark = Mark - (1 << 22)	# Compute negative value.
+        if Mark & (1 << 21):  # If sign bit is set:
+            Mark = Mark - (1 << 22)  # Compute negative value.
                 
         return Mark
 
@@ -531,7 +531,7 @@ class L6470(object):
             StepMode = self.STEP_SEL_FULL
                 
         SyncEn = self.STEP_MODE_SYNC_EN_MASK & 0x00
-        SyncSel = self.STEP_MODE_SYNC_SEL_MASK & self.SYNC_SEL_1 # Hardcoded to full FS.
+        SyncSel = self.STEP_MODE_SYNC_SEL_MASK & self.SYNC_SEL_1  # Hardcoded to full FS.
         StepSel = self.STEP_MODE_STEP_SEL_MASK & StepMode
                 
         self.setParam(self.REG_STEP_MODE, SyncEn | SyncSel | StepSel)
