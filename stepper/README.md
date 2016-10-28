@@ -1,8 +1,7 @@
-# Nodes to control and test the rail stepper 
+# Nodes to control and test the inter-pupillary rail stepper 
 
 Nodes :
   * stepper_controller : Control the stepper motor by issuing commands to this node. The commands are listed below.
-  * stepper-test-client : Simple node used to test the controller node.
   
 ## Stepper Controller node
 
@@ -12,9 +11,10 @@ rosrun stepper_controller stepper_controller_node
 ```
 
 This node listens to publishers on:
- * /stepper_controller_run : issue a command to an LED (on, off, blink)
- * /stepper_controller_goTo : configure a blinking parameter
-
+ * /stepper_controller_run : rotate the stepper at a given speed in a given direction, indefinitely.
+ * /stepper_controller_move : rotate the stepper by the given amount of steps in the given direction.
+ * /stepper_controller_goTo : rotate the stepper targetting a given absolute step position, using the shortest path.
+ * /stepper_controller_stop : stop the motion of the stepper.
 
 The launch file will simply start the node:
 ```
@@ -65,7 +65,7 @@ Using a different stop type name will result in the command being ignored.
 The SPI device consisting of the stepper can be either `/dev/spidev0.0` or `/dev/spidev0.1`. This has to be modified accordingly in:
 
 ```
-stepper_controller/src/stepper_controller.py
+stepper_controller/src/stepper_controller_node.py
 ```
 
 
