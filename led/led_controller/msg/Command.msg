@@ -1,2 +1,2 @@
-byte id
+int32 id
 string command

@@ -71,14 +71,15 @@ class PCA9530:
     # ==============================================================================================
     # Open
     # Open a new I2C connection to the specified device.
-    def open(device):
+    def open(self, device):
         # Configure I2C
         self._I2C = smbus.SMBus(device)
 
     # Close
     # Close the currently opened SPI connection.
-    def close():
+    def close(self):
         # Does currently nothing but kept here for an eventuality where it would do something.
+        return
 
     # ==============================================================================================
     # Utility functions
@@ -87,60 +88,61 @@ class PCA9530:
     # Device read
     # Read the value of the given register.
     def deviceRead(self, register):
-        return _I2C.write_byte_data(DEVICE_ADDRESS, register)
-        
+        return _I2C.write_byte_data(self.DEVICE_ADDRESS, register)
+
     # Write a byte of data to the given register.
     def deviceWrite(self, register, data):
-        _I2C.write_byte_data(DEVICE_ADDRESS, register, data)
-        
+        _I2C.write_byte_data(self.DEVICE_ADDRESS, register, data)
+
     # Write a block (more than 1 byte) of data to the given register.
     # Note that the Auto-Increment flag is used for this operation in order to configure each
     # register sequentially.
     # The specified register will then be the starting point of the sequence.
     def deviceWriteBlock(self, register, data):
-        _I2C.write_i2c_block_data(DEVICE_ADDRESS & AUTO_INCREMENT_FLAG, register, data)
-        
+        _I2C.write_i2c_block_data(self.DEVICE_ADDRESS & self.AUTO_INCREMENT_FLAG, register, data)
+
     # Set the specified LED (or LEDs) to the given state and write the current states of both 
     # LEDs to the controller register.
     # Does nothing if the ID does not exist.
     def setLEDState(self, ledID, ledState):
-        if (ledID == LED0):
+        if (ledID == self.LED0):
             self._LED0 = ledState
-        elif (ledID == LED1):
+        elif (ledID == self.LED1):
             self._LED1 = ledState
-        elif (ledID = LED_BOTH):
+        elif (ledID == self.LED_BOTH):
             self._LED0 = ledState
             self._LED1 = ledState
         else:
+	    print "PCA9530: Invalid LED identifier %d" % (ledID)
             return
-        
-        led0Value = LS0_LED0 & self._LED0
-        led1Value = LS0_LED1 & (self._LED1 << 2)
-        deviceWrite(REG_LS0, led0Value | led1Value)
+
+        led0Value = self.LS0_LED0 & self._LED0
+        led1Value = self.LS0_LED1 & (self._LED1 << 2)
+        self.deviceWrite(self.REG_LS0, led0Value | led1Value)
 
     # ==============================================================================================
     # LED commands
     # ==============================================================================================
     # LED Blink 0
     # Set the specified LED (or LEDs) to blink to at PMW0 rate.
-    def ledBlink0(self, LED_ID):
-        setLEDState(ledID, LED_BLINK0)
-        
+    def ledBlink0(self, ledID):
+        self.setLEDState(ledID, self.LED_BLINK0)
+
     # LED Blink 1
     # Set the specified LED (or LEDs) to blink to at PMW1 rate.
-    def ledBlink1(self, LED_ID):
-        setLEDState(ledID, LED_BLINK1)
-    
+    def ledBlink1(self, ledID):
+        self.setLEDState(ledID, self.LED_BLINK1)
+
     # LED Off
     # Turn the specified LED (or LEDs) off.
     def ledOff(self, ledID):
-        setLEDState(ledID, LED_OFF)
+        self.setLEDState(ledID, self.LED_OFF)
 
     # LED On
     # Turn the specified LED (or LEDs) on.
-    def ledOn(self, LED_ID):
-        setLEDState(ledID, LED_ON)
-        
+    def ledOn(self, ledID):
+        self.setLEDState(ledID, self.LED_ON)
+
     # ==============================================================================================
     # Blink configuration commands
     # ==============================================================================================
@@ -152,15 +154,15 @@ class PCA9530:
         # Limit period to an 8 bits value.
         if (period > 0xFF):
             period = 0xFF
-        
+
         # Limit duty cycle to an 8 bits value.
         if (dutyCycle > 0xFF):
             dutyCycle = 0xFF
-        
-        data = [PSC0_VALUE & period, PMW0_VALUE & dutyCycle]
-        deviceWriteBlock(REG_PCS0, data)
 
-    
+        data = [self.PSC0_VALUE & period, self.PMW0_VALUE & dutyCycle]
+        self.deviceWriteBlock(self.REG_PCS0, data)
+
+
     # Set Blink 0 Duty Cycle
     # Set a new value for the PMW0 register (8 bits value).
     # The PWM0 register determines the duty cycle of BLINK0. The outputs are LOW (LED on)
@@ -171,9 +173,9 @@ class PCA9530:
         # Limit to an 8 bits value.
         if (dutyCycle > 0xFF):
             dutyCycle = 0xFF
-            
-        deviceWrite(REG_PMW0, PMW0_VALUE & dutyCycle)
-        
+
+        self.deviceWrite(self.REG_PMW0, self.PMW0_VALUE & dutyCycle)
+
     # Set Blink 0 Period
     # Set a new value for the PSC0 register (8 bits value).
     # PSC0 is used to program the period of the PWM0 output.
@@ -182,9 +184,9 @@ class PCA9530:
         # Limit to an 8 bits value.
         if (period > 0xFF):
             period = 0xFF
-            
-        deviceWrite(REG_PCS0, PSC0_VALUE & period)
-        
+
+        self.deviceWrite(self.REG_PCS0, self.PSC0_VALUE & period)
+
     # Set Blink 1
     # Set a new value for both the period and duty cycle of BLINK1 (PSC1 and PMW1 registers).
     # Using this function is more efficient than setting the period and duty cycle separately.
@@ -193,14 +195,14 @@ class PCA9530:
         # Limit period to an 8 bits value.
         if (period > 0xFF):
             period = 0xFF
-        
+
         # Limit duty cycle to an 8 bits value.
         if (dutyCycle > 0xFF):
             dutyCycle = 0xFF
-        
-        data = [PSC1_VALUE & period, PMW1_VALUE & dutyCycle]
-        deviceWriteBlock(REG_PCS1, data)
-        
+
+        data = [self.PSC1_VALUE & period, self.PMW1_VALUE & dutyCycle]
+        self.deviceWriteBlock(self.REG_PCS1, data)
+
     # Set Blink 1 Duty Cycle
     # Set a new value for the PMW1 register (8 bits value).
     # The PWM1 register determines the duty cycle of BLINK1. The outputs are LOW (LED on)
@@ -211,9 +213,9 @@ class PCA9530:
         # Limit to an 8 bits value.
         if (dutyCycle > 0xFF):
             dutyCycle = 0xFF
-            
-        deviceWrite(REG_PMW1, PMW1_VALUE & dutyCycle)
-        
+
+        self.deviceWrite(self.REG_PMW1, self.PMW1_VALUE & dutyCycle)
+
     # Set Blink 1 Period
     # Set a new value for the PSC1 register (8 bits value).
     # PSC1 is used to program the period of the PWM1 output.
@@ -222,31 +224,5 @@ class PCA9530:
         # Limit to an 8 bits value.
         if (period > 0xFF):
             period = 0xFF
-            
-        deviceWrite(REG_PCS1, PSC1_VALUE & period)
-        
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        self.deviceWrite(self.REG_PCS1, self.PSC1_VALUE & period)
