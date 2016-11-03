@@ -92,14 +92,25 @@ class PCA9530:
 
     # Write a byte of data to the given register.
     def deviceWrite(self, register, data):
-        _I2C.write_byte_data(self.DEVICE_ADDRESS, register, data)
+        self._I2C.write_byte_data(self.DEVICE_ADDRESS, register, data)
 
     # Write a block (more than 1 byte) of data to the given register.
     # Note that the Auto-Increment flag is used for this operation in order to configure each
     # register sequentially.
     # The specified register will then be the starting point of the sequence.
     def deviceWriteBlock(self, register, data):
-        _I2C.write_i2c_block_data(self.DEVICE_ADDRESS & self.AUTO_INCREMENT_FLAG, register, data)
+        self._I2C.write_i2c_block_data(self.DEVICE_ADDRESS & self.AUTO_INCREMENT_FLAG, register, data)
+
+    def percentToDutyCycle(self, percent):
+        # Clamp to percentage limits.
+        if percent > 100:
+            percent = 100
+        elif percent < 0:
+            percent = 0
+            
+    # The duty cycle of is a value between 0x00 and 0xFF (8 bits).
+    duty = int((percent / 100) * 255)
+    return duty
 
     # Set the specified LED (or LEDs) to the given state and write the current states of both 
     # LEDs to the controller register.
@@ -155,26 +166,21 @@ class PCA9530:
         if (period > 0xFF):
             period = 0xFF
 
-        # Limit duty cycle to an 8 bits value.
-        if (dutyCycle > 0xFF):
-            dutyCycle = 0xFF
+        # Convert duty cycle percentage.
+        duty = percentToDutyCycle(dutyCycle)
 
-        data = [self.PSC0_VALUE & period, self.PMW0_VALUE & dutyCycle]
+        data = [self.PSC0_VALUE & period, self.PMW0_VALUE & duty]
         self.deviceWriteBlock(self.REG_PCS0, data)
 
 
     # Set Blink 0 Duty Cycle
     # Set a new value for the PMW0 register (8 bits value).
-    # The PWM0 register determines the duty cycle of BLINK0. The outputs are LOW (LED on)
-    # when the count is less than the value in PWM0 and HIGH (LED off) when it is greater. If
-    # PWM0 is programmed with 0x00, then the PWM0 output is always HIGH (LED off).
-    # The duty cycle of BLINK0 = PWM0 / 256
+    
     def setBlink0DutyCycle(self, dutyCycle):
-        # Limit to an 8 bits value.
-        if (dutyCycle > 0xFF):
-            dutyCycle = 0xFF
+        # Convert duty cycle percentage.
+        duty = percentToDutyCycle(dutyCycle)
 
-        self.deviceWrite(self.REG_PMW0, self.PMW0_VALUE & dutyCycle)
+        self.deviceWrite(self.REG_PMW0, self.PMW0_VALUE & duty)
 
     # Set Blink 0 Period
     # Set a new value for the PSC0 register (8 bits value).
@@ -196,11 +202,10 @@ class PCA9530:
         if (period > 0xFF):
             period = 0xFF
 
-        # Limit duty cycle to an 8 bits value.
-        if (dutyCycle > 0xFF):
-            dutyCycle = 0xFF
+        # Convert duty cycle percentage.
+        duty = percentToDutyCycle(dutyCycle)
 
-        data = [self.PSC1_VALUE & period, self.PMW1_VALUE & dutyCycle]
+        data = [self.PSC1_VALUE & period, self.PMW1_VALUE & duty]
         self.deviceWriteBlock(self.REG_PCS1, data)
 
     # Set Blink 1 Duty Cycle
@@ -210,11 +215,10 @@ class PCA9530:
     # PWM1 is programmed with 0x00, then the PWM1 output is always HIGH (LED off).
     # The duty cycle of BLINK1 = PWM1 / 256
     def setBlink1DutyCycle(self, dutyCycle):
-        # Limit to an 8 bits value.
-        if (dutyCycle > 0xFF):
-            dutyCycle = 0xFF
+        # Convert duty cycle percentage.
+        duty = percentToDutyCycle(dutyCycle)
 
-        self.deviceWrite(self.REG_PMW1, self.PMW1_VALUE & dutyCycle)
+        self.deviceWrite(self.REG_PMW1, self.PMW1_VALUE & duty)
 
     # Set Blink 1 Period
     # Set a new value for the PSC1 register (8 bits value).

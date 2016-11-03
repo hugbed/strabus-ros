@@ -10,7 +10,7 @@ from PCA9530_pkg.PCA9530_lib import PCA9530
 from led_controller.msg import Command
 from led_controller.msg import Config
 
-# Callback used for commands received from the led_ring_command topic.
+# Callback used for commands received from the led_controller_command topic.
 def commandCallback(command):
     if command.id == 0:
         idStr = "LED0"
@@ -38,9 +38,25 @@ def commandCallback(command):
         rospy.logwarn(rospy.get_caller_id() + ": Unsupported command \"%s\"" % (command.command))
         return
 
-# Callback used for configuration received from the led_ring_config topic.
+# Callback used for configuration received from the led_controller_config topic.
 def configCallback(config):
-    rospy.loginfo(rospy.get_caller_id() + 'I heard %s', config.config)
+    if config.id == 0:
+        idStr = "BLINK0"
+    elif config.id == 1:
+        idStr = "BLINK1"
+    else:
+        rospy.logwarn(rospy.get_caller_id() + " Unrecognized BLINK identifier \"%d\"" % (config.id))
+        return
+
+    if config.config == "duty-cycle":
+        rospy.loginfo(rospy.get_caller_id() + ": Configuring duty cycle for %s" % (idStr))
+        _controller.ledOn(command.id)
+    elif config.config == "period":
+        rospy.loginfo(rospy.get_caller_id() + ": Configuring period for %s" % (idStr))
+        _controller.ledOff(command.id)
+    else:
+        rospy.logwarn(rospy.get_caller_id() + ": Unsupported command \"%s\"" % (command.command))
+        return
 
 # Main node function.
 if __name__ == '__main__':
