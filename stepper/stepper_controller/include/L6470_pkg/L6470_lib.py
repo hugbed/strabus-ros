@@ -194,13 +194,10 @@ class L6470(object):
         # Controller expects an acceleration in step/tick^2 formatted in unsigned fixed point 0.40.
         # Equation: StepTick2 = (StepSec2 * TICK^2)/2^-40
         # Equivalent to: StepTick2 * 0.068719
-        StepTick2 = int(StepSec2 * self.STEP_ACC_RATIO)
+        StepTick2 = int(round(StepSec2 * self.STEP_ACC_RATIO))
         
         # Limit speed to a 12 bits number
-        if StepTick2 > 0x00000FFF:
-            return 0x00000FFF
-        
-        return StepTick2
+        return min(StepTick2, 0x00000FFF)
 
     # Convert a speed from step/tick to step/s.
     def speedToStepSec(self, StepTick):
@@ -216,13 +213,10 @@ class L6470(object):
         # Controller expects speed in step/tick formatted in unsigned fixed point 0.28.
         # Equation: StepTick = (StepSec * TICK)/(2^-28)
         # Equivalent to: StepSec * 67.108864
-        StepTick = int(StepSec * self.STEP_SPEED_RATIO)
+        StepTick = int(round(StepSec * self.STEP_SPEED_RATIO))
         
         # Limit speed to a 20 bits number
-        if StepTick > 0x000FFFFF:
-            return 0x000FFFFF
-        
-        return StepTick
+        return min(StepTick, 0x000FFFFF)
 
     # Convert a max or min speed from step/tick to step/s.
     # Max or min speed registers use a different encoding than the stepper speed register.
@@ -243,10 +237,7 @@ class L6470(object):
         StepTick = StepSec * self.MAXMIN_STEP_SPEED_RATIO
         
         # Limit speed to a 20 bits number
-        if StepTick > 0x000FFFFF:
-            return 0x000FFFFF
-        
-        return StepTick
+        return min(StepTick, 0x000FFFFF)
 
     # ==============================================================================================
     # Stepper commands
@@ -264,8 +255,7 @@ class L6470(object):
             return
 
         # Limit Value to a 24 bits number.
-        if Value > 0x00FFFFFF: 
-            Value = 0x00FFFFFF
+        Value = min(Value, 0x00FFFFFF)
 
         self.sendCmd3(self.CMD_SETPARAM | Param, Value)
 
@@ -313,8 +303,7 @@ class L6470(object):
             return
                 
         # Limit steps to a 22 bits number
-        if Steps > 0x003FFFFF:
-            Steps = 0x003FFFFF
+        Steps = min(Steps, 0x003FFFFF)
         
         self.sendCmd3(self.CMD_MOVE | Direction, int(Steps))
 
@@ -324,8 +313,7 @@ class L6470(object):
     # This function uses the shortest path possible to get to that position.
     def goTo(self, Position):
         # Limit posiition to a 22 bits number
-        if Position > 0x003FFFFF:
-            Position = 0x003FFFFF
+        Position = min(Position, 0x003FFFFF)
         
         self.sendCmd3(self.CMD_GOTO, int(Position))
 
@@ -337,8 +325,7 @@ class L6470(object):
             return
 
         # Limit posiition to a 22 bits number
-        if Position > 0x003FFFFF:
-            Position = 0x003FFFFF
+        Position = min(Position, 0x003FFFFF)
         
         self.sendCmd3(self.CMD_GOTODIR | Direction, int(Position))
 
@@ -487,8 +474,7 @@ class L6470(object):
             return
         
         # Limit value to 12 bits.
-        if MinSpeed > 0x0FFF:
-            MinSpeed = 0x0FFF
+        MinSpeed = min(MinSpeed, 0x0FFF)
         
         # Add the low speed optimization bit if specified.
         if Optimized == True:
@@ -503,8 +489,7 @@ class L6470(object):
             return
         
         # Limit value to 10 bits.
-        if (MaxSpeed > 0x03FF):
-            MaxSpeed = 0x03FF
+        MaxSpeed = min(MaxSpeed, 0x03FF)
         
         self.setParam(self.REG_MAX_SPEED, self.maxMinspeedToStepTick(MaxSpeed))
 
@@ -517,8 +502,7 @@ class L6470(object):
             return
         
         # Limit value to 10 bits.
-        if ThresholdSpeed > 0x03FF:
-            ThresholdSpeed = 0x03FF
+        ThresholdSpeed = min(ThresholdSpeed, 0x03FF)
 
         self.setParam(self.REG_FS_SPD, self.maxMinSpeedToStepTick(ThresholdSpeed))
 
@@ -541,8 +525,7 @@ class L6470(object):
     # See the ALARM values for options.
     def setAlarms(self, Alarms):
         # Limit alarms to 8 bits
-        if Alarms > 0xFF:
-            Alarms = 0xFF
+        Alarms = min(Alarms, 0xFF)
                 
         self.setParam(self.REG_ALARM_EN, Alarms)
 
