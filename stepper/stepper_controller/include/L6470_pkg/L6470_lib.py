@@ -65,6 +65,18 @@ class L6470(object):
     REG_DEC		 = 0x06
     REG_MAX_SPEED = 0x07
     REG_MIN_SPEED = 0x08
+    REG_KVAL_HOLD = 0x09
+    REG_KVAL_RUN = 0x0A
+    REG_KVAL_ACC = 0x0B
+    REG_KVAL_DEC = 0x0C
+    REG_INT_SPEED = 0x0D
+    REG_ST_SLP = 0x0E
+    REG_FN_SLP_ACC = 0x0F
+    REG_FN_SLP_DEC = 0x10
+    REG_K_THERM = 0x11
+    REG_ADC_OUT = 0x12
+    REG_OCD_TH = 0x13
+    REG_STALL_TH = 0x14
     REG_FS_SPD	 = 0x15
     REG_STEP_MODE = 0x16
     REG_ALARM_EN = 0x17
@@ -521,6 +533,99 @@ class L6470(object):
             ThresholdSpeed = 0x03FF
 
         self.setParam(self.REG_FS_SPD, self.maxMinSpeedToStepTick(ThresholdSpeed))
+
+
+    # SetKvals
+    # Range is 0.996*12V=11.952V with a resolution of 0.004*12V=0.048V
+    # Reg range is KVAL_HOLD, KVAL_RUN, KVAL_ACC, KVAL_DEC
+    # RegVal range is 0-255 
+    def setKvalHold(self, Reg, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0  
+        self.setParam(self.REG_KVAL_HOLD, RegVal)
+
+    def setKvalRun(self, Reg, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0  
+        self.setParam(self.REG_KVAL_RUN, RegVal)
+
+    def setKvalAcc(self, Reg, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0  
+        self.setParam(self.REG_KVAL_ACC, RegVal)
+
+    def setKvalDec(self, Reg, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0  
+        self.setParam(self.REG_KVAL_DEC, RegVal)
+
+     
+    #The INT_SPEED register contains the speed value at which the BEMF compensation curve
+    # changes slope. The available range is from 0 to 976.5 step/s with a resolution of 0.0596 step/s.
+    # 14 bit register.
+    def setIntersectSpeed(self, RegVal):
+        if RegVal > 0x3FFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_INT_SPEED, RegVal)
+
+    #The ST_SLP register contains the BEMF compensation curve slope that is used when the
+    #speed is lower than the intersect speed (see Section 7.4). Its value is expressed in s/step
+    #and the available range is from 0 to 0.004 with a resolution of 0.000015.
+    def setStartSlope(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_ST_SLP, RegVal)
+
+
+    #The FN_SLP_ACC register contains the BEMF compensation curve slope that is used when
+    #the speed is greater than the intersect speed during acceleration (see Section 7.4). Its value
+    #is expressed in s/step and the available range is from 0 to 0.004 with a resolution of
+    #0.000015.
+    def setAccFinalSlope(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_FN_SLP_ACC, RegVal)
+
+
+    #The FN_SLP_DEC register contains the BEMF compensation curve slope that is used when
+    #the speed is greater than the intersect speed during deceleration (see Section 7.4). Its value
+    #is expressed in s/step and the available range is from 0 to 0.004 with a resolution of
+    #0.000015.
+    def setDecFinalSlope(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_FN_SLP_DEC, RegVal)
+
+
+    #The K_THERM register contains the value used by the winding resistance thermal drift
+    #compensation system (see Section 7.6 on page 37).
+    #The available range is from 1 to 1.46875 with a resolution of 0.03125, as shown in Table 13.
+    def setKThermComp(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_K_THERM, RegVal)
+
+    #The ADC_OUT register contains the result of the analog-to-digital conversion of the ADCIN
+    #pin voltage; the result is available even if the supply voltage compensation is disabled.
+    def getADCOut(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_ST_SLP, RegVal)
+
+    #The OCD_TH register contains the overcurrent threshold value (see Section 6.9 on page
+    #29). The available range is from 375 mA to 6 A, in steps of 375 mA, as shown in Table 15.
+    def setOCDThresold(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_ST_SLP, RegVal)
+
+    #The STALL_TH register contains the stall detection threshold value (see Section 7.2 on
+    #page 35). The available range is from 31.25 mA to 4 A with a resolution of 31.25 mA.
+    def setStallThreshold(self, RegVal):
+        if RegVal > 0xFF:
+            RegVal = 0x0 
+        self.setParam(self.REG_ST_SLP, RegVal)
+
 
     # SetStepMode command
     # The step mode determines the movement unit of the stepper (microsteps).
