@@ -4,59 +4,92 @@
 import rospy
 
 # Stepper generated messages.
-from stepper_controller.msg import Run
-from stepper_controller.msg import Move
-from stepper_controller.msg import GoTo
-from stepper_controller.msg import Stop
+from std_msg.msg import String
 
 # Controller library.
 from L6470_pkg.L6470_lib import L6470
 
-# Callback used to run the stepper in the given direction and at the given speed.
-# The stepper will run until a stop command is issued or until a limit switch is hit.
-def runCallback(run):
-    if (run.direction == "clockwise" or run.direction == "counter-clockwise"):
-        rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (run.speed, run.direction))
+# JSON tool
+import json
+
+# Callback used to translate the received JSON message to a stepper command.
+# Expecting something like this (example for the run command):
+# {
+#    "command" : "run",
+#    "parameters" : [
+#        {
+#            "direction" : "clockwise",
+#            "speed" : 800.0
+#        }
+#    ]
+#}
+def messageCallback(message):
+    # Unpack JSON message
+    data = json.loads(message.data)
+    
+    # Execute the given command with its parameters.
+    command = data['command']
+    if command == "run":
+        parameters = data['parameters'][0]
+        runCommand(parameters['direction'], parameters['speed'])
+    elif command == "move":
+        parameters = data['parameters'][0]
+        moveCommand(parameters['direction'], parameters['steps'])
+    elif command == "goTo":
+        parameters = data['parameters'][0]
+        goToCommand(parameters['position'])
+    elif command == "stop":
+        parameters = data['parameters'][0]
+        stopCommand(parameters['type'])
     else:
-        rospy.logerr(rospy.get_caller_id() + ": Unrecognized run direction for \"%s\"" % (run.direction))
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized command \"%s\"" % (command))
+
+
+# Run the stepper in the given direction and at the given speed.
+# The stepper will run until a stop command is issued or until a limit switch is hit.
+def runCommand(direction, speed):
+    if (direction == "clockwise" or direction == "counter-clockwise"):
+        rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (speed, direction))
+    else:
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized run direction for \"%s\"" % (direction))
     
     # Run the stepper if the direction is appropriate.
-    if (run.direction == "clockwise"):
-        _controller.run(L6470.DIR_CLOCKWISE, run.speed)
+    if (direction == "clockwise"):
+        _controller.run(L6470.DIR_CLOCKWISE, speed)
     elif (run.direction == "counter-clockwise"):
-        _controller.run(L6470.DIR_COUNTER_CLOCKWISE, run.speed)
+        _controller.run(L6470.DIR_COUNTER_CLOCKWISE, speed)
     
-# Callback used to move the stepper by the given number of microsteps.
-def moveCallback(move):
-    if (move.direction == "clockwise" or move.direction == "counter-clockwise"):
-        rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s rotation" % (move.steps, move.direction))
+# Move the stepper by the given number of microsteps.
+def moveCommand(direction, steps):
+    if (direction == "clockwise" or direction == "counter-clockwise"):
+        rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s rotation" % (steps, direction))
     else:
-        rospy.logerr(rospy.get_caller_id() + ": Unrecognized move direction for \"%s\"" % (move.direction))
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized move direction for \"%s\"" % (direction))
     
     # Issue a Move command to the stepper if the direction is appropriate.
-    if (move.direction == "clockwise"):
-        _controller.move(L6470.DIR_CLOCKWISE, move.steps)
-    elif (move.direction == "counter-clockwise"):
-        _controller.move(L6470.DIR_COUNTER_CLOCKWISE, move.steps)
+    if (direction == "clockwise"):
+        _controller.move(L6470.DIR_CLOCKWISE, steps)
+    elif (direction == "counter-clockwise"):
+        _controller.move(L6470.DIR_COUNTER_CLOCKWISE, steps)
 
-# Callback used to move the stepper to the given position.
-def goToCallback(goTo):
-    rospy.loginfo(rospy.get_caller_id() + ": Go to position %d" % (goTo.position))
+# Move the stepper to the given position.
+def goToCommand(position):
+    rospy.loginfo(rospy.get_caller_id() + ": Go to position %d" % (position))
 
     # Issue a GoTo command to the stepper.
-    _controller.goTo(goTo.position)
+    _controller.goTo(position)
     
-# Callback used to stop the stepper, either immediately or after a deceleration curve.
-def stopCallback(stop):
-    if (stop.type == "hard" or stop.type == "soft"):
-        rospy.loginfo(rospy.get_caller_id() + ": %s stop" % (stop.type))
+# Stop the stepper, either immediately or after a deceleration curve.
+def stopCommand(type):
+    if (type == "hard" or type == "soft"):
+        rospy.loginfo(rospy.get_caller_id() + ": %s stop" % (type))
     else:
-        rospy.logerr(rospy.get_caller_id() + ": Unrecognized stop type for \"%s\"" % (stop.type))
+        rospy.logerr(rospy.get_caller_id() + ": Unrecognized stop type for \"%s\"" % (type))
 
     # Issue a stop command to the stepper.
-    if (stop.type == "hard"):
+    if (type == "hard"):
         _controller.hardStop()
-    elif (stop.type == "soft"):
+    elif (type == "soft"):
         _controller.softStop()
 
 # Main node function.
@@ -66,11 +99,7 @@ if __name__ == '__main__':
     _controller.open(0, 0)
 
     rospy.init_node("stepper_controller_node", anonymous=True)
-
-    rospy.Subscriber("stepper_controller_run", Run, runCallback)
-    rospy.Subscriber("stepper_controller_move", Move, moveCallback)
-    rospy.Subscriber("stepper_controller_goTo", GoTo, goToCallback)
-    rospy.Subscriber("stepper_controller_stop", Stop, stopCallback)
+    rospy.Subscriber("stepper_controller_topic", String, messageCallback)
 
     rospy.spin()
     
