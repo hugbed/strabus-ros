@@ -267,7 +267,7 @@ class L6470(object):
             return
 
         # Limit Value to a 24 bits number.
-        Value = min(Value, 0x00FFFFFF)
+        Value = min(int(round(Value)), 0x00FFFFFF)
 
         self.sendCmd3(self.CMD_SETPARAM | Param, Value)
 
