@@ -21,11 +21,10 @@ using namespace cv;
 EyeTracker::EyeTracker()
         : it_(nh_) {
     // Subscribe to input video feed and publish output video feed
-    image_sub_ = it_.subscribe("/usb_cam/image_raw", 1,
+    image_sub_ = it_.subscribe("/camera/image", 1,
                                &EyeTracker::frameCallback, this);
     image_pub_ = it_.advertise("/tracking/eye_tracking_feed", 1);
     maskCreated = false;
-    initBlobDetector();
     overlayCounter = 0;
 }
 
@@ -129,7 +128,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
 
         //Get the eye center using gradient algorithm
         float confidence = 0.8;
-        cv::Point position = findEyeCenter(eye, mask, &confidence, detector);
+        cv::Point position = findEyeCenter(eye, mask, &confidence);
         cv::Rect eyeRect(0, 0, frame.cols, frame.rows);
         position = unscalePoint(position,eyeRect);
 

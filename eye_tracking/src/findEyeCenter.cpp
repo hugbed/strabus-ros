@@ -121,7 +121,7 @@ void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
     equalizeHist(eyeROI, eyeROI);
 }
 
-cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence,  cv::SimpleBlobDetector * detector) {
+cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
     equalizeForTube(eyeROI, mask);
     // draw eye region
     //-- Fd the gradient
