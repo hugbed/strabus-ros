@@ -500,8 +500,7 @@ class L6470(object):
         if MinSpeed < 0:
             return
         
-        # Limit value to 12 bits.
-        MinSpeed = min(MinSpeed, 0x0FFF)
+        MinSpeed = min(MinSpeed, 976)
         
         # Add the low speed optimization bit if specified.
         if Optimized == True:
@@ -515,7 +514,6 @@ class L6470(object):
         if MaxSpeed < 0:
             return
         
-        # Limit value to 10 bits.
         MaxSpeed = min(MaxSpeed, 15625)
         
         self.setParam(self.REG_MAX_SPEED, self.maxMinspeedToStepTick(MaxSpeed), 2)
