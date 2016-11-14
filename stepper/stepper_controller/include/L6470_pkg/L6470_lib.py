@@ -170,7 +170,7 @@ class L6470(object):
         for idx, byte in enumerate(params):
             request = [byte]
             response = self._SPI.xfer2(request)
-            responseValue = responseValue | (response[0] << (length-idx))
+            responseValue = responseValue | (response[0] << ((length-idx-1)*8))
 
         return responseValue
 
@@ -259,7 +259,7 @@ class L6470(object):
         StepTick = StepSec * self.MAXMIN_STEP_SPEED_RATIO
         
         # Limit speed to a 20 bits number
-        return min(StepTick, 0x000FFFFF)
+        return min(int(round(StepTick)), 0x000FFFFF)
 
     # Convert a value to array with the MSB first
     def valueToMSBytes(self, Value, NbBytes):
