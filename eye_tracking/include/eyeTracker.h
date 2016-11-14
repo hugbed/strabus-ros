@@ -35,7 +35,7 @@ class EyeTracker {
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
     image_transport::Publisher image_pub_;
-	KalmanFilter filter;
+	  KalmanFilter filter;
     std::vector<cv::Point> point_history;
     TickMeter tm;
     cv::Mat mask;
@@ -52,5 +52,5 @@ private:
     void frameCallback(const sensor_msgs::ImageConstPtr &msg);
     void createMask(cv::Mat src);
     void drawOverlay(cv::Mat src, cv::Point offset);
-
+    void drawText(cv::Mat frame, cv::Point offset);
 };

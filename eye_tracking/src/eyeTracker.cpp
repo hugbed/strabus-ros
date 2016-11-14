@@ -38,13 +38,8 @@ cv::Point getOffset(cv::Point point, cv::Mat frame ){
     return offset;
 }
 
-void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
-
-    cv::Scalar color_green(100, 200, 0, 1);
-    cv::line(frame, cv::Point(frame.cols/2,0), cv::Point(frame.cols/2,frame.rows), color_green, 1);
-    cv::line(frame, cv::Point(0,frame.rows/2), cv::Point(frame.cols,frame.rows/2), color_green, 1);
+void EyeTracker::drawText(cv::Mat frame, cv::Point offset){
     overlayCounter ++;
-
     if (overlayCounter %20 ==0) {
         std::stringstream ss;
         ss << "X offset : " << offset.x;
@@ -55,7 +50,7 @@ void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
     }
 
     int fontFace = FONT_HERSHEY_DUPLEX;
-    double fontScale = 1;
+    double fontScale = 0.4;
     int thickness = 1;
     int baseline = 0;
 
@@ -76,14 +71,28 @@ void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
     // Draw text
     putText(frame, text_y, textOrg_y, fontFace, fontScale,
             Scalar::all(255), thickness, 8);
+}
+void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
 
+    cv::Scalar color_green(100, 200, 0, 1);
+    cv::line(frame, cv::Point(frame.cols/2,0), cv::Point(frame.cols/2,frame.rows), color_green, 1);
+    cv::line(frame, cv::Point(0,frame.rows/2), cv::Point(frame.cols,frame.rows/2), color_green, 1);
+    int h_step = frame.rows/10;
+    int w_step = frame.cols/10;
+    for (int h = h_step/2; h<frame.rows; h+=h_step){
+      cv::line(frame, cv::Point(frame.cols/2 - 5,h), cv::Point(frame.cols/2 +5,h),color_green,1);
+    }
+    for (int w = w_step/2; w<frame.cols; w+=w_step){
+      cv::line(frame, cv::Point(w, frame.rows/2 - 5), cv::Point(w, frame.rows/2 +5),color_green,1);
+    }
+    //drawText(frame, offset);
 }
 
 void EyeTracker::createMask(cv::Mat eyeROI){
     //Create mask
     mask = cv::Mat(eyeROI.size(), eyeROI.type());
     mask = cv::Scalar(0);
-    cv::circle(mask, cv::Point(eyeROI.cols/2, eyeROI.rows/2), (int) eyeROI.cols/5, 1234, -1);
+    cv::circle(mask, cv::Point(eyeROI.cols/2, eyeROI.rows/2), (int) eyeROI.cols/6, 1234, -1);
 }
 
 void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {

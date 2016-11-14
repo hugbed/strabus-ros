@@ -190,7 +190,7 @@ cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
 
    // printf("EyeRoi dims: %ix%i\n",eyeROI.cols, eyeROI.rows);
    // printf("OUT dims: %ix%i\n",outSum.cols, outSum.rows);
-    printf("Number of multiplications: %i\n",numMultiplications);
+    //printf("Number of multiplications: %i\n",numMultiplications);
 
 
     // scale all the values down, basically averaging them
@@ -200,10 +200,10 @@ cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
     outSum.convertTo(out, CV_32F,100/numGradients);
     outSum.convertTo(out8, CV_8U);
 
-    cv::imshow("EyeROI",eyeROI);
-    cv::imshow("GradientX",gradientX);
-    cv::imshow("GradientY",gradientX);
-    cv::imshow("Centers",out);
+    //cv::imshow("EyeROI",eyeROI);
+    //cv::imshow("GradientX",gradientX);
+    //cv::imshow("GradientY",gradientX);
+    //cv::imshow("Centers",out);
     //-- Find the maximum point
     cv::Point maxP;
     double maxVal;
@@ -224,8 +224,8 @@ cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
     return maxP;
 }
 
-cv::Point findCenterWithBlobs(cv::Mat eye, cv::Mat mask, cv::SimpleBlobDetector * detector){
-    equalizeForTube(eye, mask);
+cv::Point findCenterWithBlobs(cv::Mat eye, cv::Mat mask){
+    //equalizeForTube(eye, mask);
 
     vector<vector<Point> > contours;
     Mat eye2;
@@ -246,7 +246,7 @@ cv::Point findCenterWithBlobs(cv::Mat eye, cv::Mat mask, cv::SimpleBlobDetector 
 
         if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*30 )
             continue;
-        //drawContours(cimage, contours, (int)i, Scalar::all(255), 1, 8);
+        drawContours(eye2, contours, (int)i, Scalar::all(255), 1, 8);
 
         ellipse(eye2, box, Scalar(0,0,255), 1, CV_AA);
         ellipse(eye2, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
