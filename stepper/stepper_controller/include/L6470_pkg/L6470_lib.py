@@ -158,11 +158,21 @@ class L6470(object):
     # Utility functions
     # Meant to be used as private functions.
     # ==============================================================================================
-    # Send a single command byte without an expected response.
-    def sendCmd(self, command):
+    # Send command with optional params.
+    def sendCmd(self, command, params=[]):
         # Send command byte to the controller.
         byte = [command]
         self._SPI.xfer2(byte)
+
+        responseValue = 0
+        length = len(params)
+        #Send parameters
+        for idx, byte in enumerate(params):
+            request = [byte]
+            response = self._SPI.xfer2(request)
+            responseValue = responseValue | (response[0] << (length-idx))
+
+        return responseValue
 
     # Send a command with the parameter split in 3 bytes and obtain the response in 3 bytes.
     def sendCmd3(self, command, param):
@@ -251,6 +261,14 @@ class L6470(object):
         # Limit speed to a 20 bits number
         return min(StepTick, 0x000FFFFF)
 
+    # Convert a value to array with the MSB first
+    def valueToMSBytes(self, Value, NbBytes):
+        msb = []
+        for i in xrange(NbBytes):
+            shift = 8*(NbBytes-i-1)
+            msb.append((Value >> shift) & 0xFF)
+        return msb
+
     # ==============================================================================================
     # Stepper commands
     # ==============================================================================================
@@ -261,24 +279,21 @@ class L6470(object):
 
     # SetParam command
     # Set the given register to the given value.
-    def setParam(self, Param, Value):
+    def setParam(self, Param, Value, nbBytes):
         # Only accept Param as a 5 bits number.
         if Param > 0x1F:
             return
 
-        # Limit Value to a 24 bits number.
-        Value = min(int(round(Value)), 0x00FFFFFF)
-
-        self.sendCmd3(self.CMD_SETPARAM | Param, Value)
+        self.sendCmd(self.CMD_SETPARAM | Param, self.valueToMSBytes(Value, nbBytes))
 
     # GetParam command
     # Obtain the value contained in the given register.
-    def getParam(self, Param):
+    def getParam(self, Param, nbBytes):
         # Only accept Param as a 5 bits number.
         if Param > 0x1F:
             return
 
-        return self.sendCmd3(self.CMD_GETPARAM | Param, 0x000000)
+        return self.sendCmd(self.CMD_GETPARAM | Param, self.valueToMSBytes(0, nbBytes))
 
     # Run command
     # Speed in in step/s. As a reference, there are 200 steps in a full rotation.
@@ -430,7 +445,7 @@ class L6470(object):
     # Obtain the current absolute position of the stepper.
     def currentPosition(self):
         # Obtain position, in two's complement form.
-        Pos = self.getParam(self.REG_ABS_POS)
+        Pos = self.getParam(self.REG_ABS_POS, 3)
         
         # Convert to int value.
         if Pos & (1 << 21):  # If sign bit is set:
@@ -443,7 +458,7 @@ class L6470(object):
     # The mark position is a saved position to which the GoMark command can easily go.
     def markPosition(self):
         # Obtain position, in two's complement form.
-        Mark = self.getParam(self.REG_MARK)
+        Mark = self.getParam(self.REG_MARK, 3)
         
         # Convert to int value.
         if Mark & (1 << 21):  # If sign bit is set:
@@ -455,7 +470,7 @@ class L6470(object):
     # Obtain the speed at which the stepper is currently moving, in step/s.
     def currentSpeed(self):
         # Obtain value in SPEED register in step/tick and convert to step/s.
-        Speed = self.speedToStepSec(self.getParam(self.REG_SPEED))
+        Speed = self.speedToStepSec(self.getParam(self.REG_SPEED, 3))
         
         return Speed
 
@@ -464,7 +479,7 @@ class L6470(object):
     # This acceleration value is used for soft starts of the stepper.
     def currentAcceleration(self):
         # Obtain value in ACC register in step/tick^2 and convert to step/s^2.
-        Acc = self.accToStepSec(self.getParam(self.REG_ACC))
+        Acc = self.accToStepSec(self.getParam(self.REG_ACC, 2))
         
         return Acc
 
@@ -473,7 +488,7 @@ class L6470(object):
     # This deceleration value is used for soft stops of the stepper.
     def currentDeceleration(self):
         # Obtain value in DEC register in step/tick^2 and convert to step/s^2.
-        Dec = self.accToStepSec(self.getParam(self.REG_DEC))
+        Dec = self.accToStepSec(self.getParam(self.REG_DEC, 2))
         
         return Dec
 
@@ -492,7 +507,7 @@ class L6470(object):
         if Optimized == True:
             MinSpeed += 0x1000
         
-        self.setParam(self.REG_MIN_SPEED, self.maxMinspeedToStepTick(MinSpeed))
+        self.setParam(self.REG_MIN_SPEED, self.maxMinspeedToStepTick(MinSpeed), 2)
 
     # SetMaxSpeed command
     # Set a new maximum speed for the stepper, in step/s.
@@ -503,7 +518,7 @@ class L6470(object):
         # Limit value to 10 bits.
         MaxSpeed = min(MaxSpeed, 0x03FF)
         
-        self.setParam(self.REG_MAX_SPEED, self.maxMinspeedToStepTick(MaxSpeed))
+        self.setParam(self.REG_MAX_SPEED, self.maxMinspeedToStepTick(MaxSpeed), 2)
 
     # SetThresholdSpeed command
     # Set a new threshold speed for the stepper, in step/s.
@@ -516,7 +531,7 @@ class L6470(object):
         # Limit value to 10 bits.
         ThresholdSpeed = min(ThresholdSpeed, 0x03FF)
 
-        self.setParam(self.REG_FS_SPD, self.maxMinSpeedToStepTick(ThresholdSpeed))
+        self.setParam(self.REG_FS_SPD, self.maxMinSpeedToStepTick(ThresholdSpeed), 2)
 
 
     # SetKvals
@@ -526,22 +541,22 @@ class L6470(object):
     def setKvalHold(self, Reg, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
-        self.setParam(self.REG_KVAL_HOLD, RegVal)
+        self.setParam(self.REG_KVAL_HOLD, RegVal, 1)
 
     def setKvalRun(self, Reg, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
-        self.setParam(self.REG_KVAL_RUN, RegVal)
+        self.setParam(self.REG_KVAL_RUN, RegVal, 1)
 
     def setKvalAcc(self, Reg, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
-        self.setParam(self.REG_KVAL_ACC, RegVal)
+        self.setParam(self.REG_KVAL_ACC, RegVal, 1)
 
     def setKvalDec(self, Reg, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
-        self.setParam(self.REG_KVAL_DEC, RegVal)
+        self.setParam(self.REG_KVAL_DEC, RegVal, 1)
 
      
     #The INT_SPEED register contains the speed value at which the BEMF compensation curve
@@ -550,7 +565,7 @@ class L6470(object):
     def setIntersectSpeed(self, RegVal):
         if RegVal > 0x3FFF:
             RegVal = 0x0 
-        self.setParam(self.REG_INT_SPEED, RegVal)
+        self.setParam(self.REG_INT_SPEED, RegVal, 2)
 
     #The ST_SLP register contains the BEMF compensation curve slope that is used when the
     #speed is lower than the intersect speed (see Section 7.4). Its value is expressed in s/step
@@ -558,7 +573,7 @@ class L6470(object):
     def setStartSlope(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal)
+        self.setParam(self.REG_ST_SLP, RegVal, 1)
 
 
     #The FN_SLP_ACC register contains the BEMF compensation curve slope that is used when
@@ -568,7 +583,7 @@ class L6470(object):
     def setAccFinalSlope(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_FN_SLP_ACC, RegVal)
+        self.setParam(self.REG_FN_SLP_ACC, RegVal, 1)
 
 
     #The FN_SLP_DEC register contains the BEMF compensation curve slope that is used when
@@ -578,7 +593,7 @@ class L6470(object):
     def setDecFinalSlope(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_FN_SLP_DEC, RegVal)
+        self.setParam(self.REG_FN_SLP_DEC, RegVal, 1)
 
 
     #The K_THERM register contains the value used by the winding resistance thermal drift
@@ -587,28 +602,28 @@ class L6470(object):
     def setKThermComp(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_K_THERM, RegVal)
+        self.setParam(self.REG_K_THERM, RegVal, 1)
 
     #The ADC_OUT register contains the result of the analog-to-digital conversion of the ADCIN
     #pin voltage; the result is available even if the supply voltage compensation is disabled.
     def getADCOut(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal)
+        self.setParam(self.REG_ST_SLP, RegVal, 1)
 
     #The OCD_TH register contains the overcurrent threshold value (see Section 6.9 on page
     #29). The available range is from 375 mA to 6 A, in steps of 375 mA, as shown in Table 15.
     def setOCDThresold(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal)
+        self.setParam(self.REG_ST_SLP, RegVal, 1)
 
     #The STALL_TH register contains the stall detection threshold value (see Section 7.2 on
     #page 35). The available range is from 31.25 mA to 4 A with a resolution of 31.25 mA.
     def setStallThreshold(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal)
+        self.setParam(self.REG_ST_SLP, RegVal, 1)
 
 
     # SetStepMode command
@@ -623,7 +638,7 @@ class L6470(object):
         SyncSel = self.STEP_MODE_SYNC_SEL_MASK & self.SYNC_SEL_1  # Hardcoded to full FS.
         StepSel = self.STEP_MODE_STEP_SEL_MASK & StepMode
                 
-        self.setParam(self.REG_STEP_MODE, SyncEn | SyncSel | StepSel)
+        self.setParam(self.REG_STEP_MODE, SyncEn | SyncSel | StepSel, 1)
 
     # SetAlarms command
     # Configure which alarms are active on the controller.
@@ -632,7 +647,7 @@ class L6470(object):
         # Limit alarms to 8 bits
         Alarms = min(Alarms, 0xFF)
                 
-        self.setParam(self.REG_ALARM_EN, Alarms)
+        self.setParam(self.REG_ALARM_EN, Alarms, 1)
 
     # SetConfig command
     # Not implemented for now.
@@ -645,7 +660,4 @@ class L6470(object):
     # This command does not reset the warning flags and error states.
     def getStatus(self):
         # Obtain status.
-        Status = self.getParam(self.REG_STATUS)
-        
-        # Keep only the two last bytes of response.
-        return Status & 0x0000FFFF
+        return self.getParam(self.REG_STATUS, 2)
