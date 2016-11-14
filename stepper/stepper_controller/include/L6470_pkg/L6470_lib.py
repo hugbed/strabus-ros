@@ -516,7 +516,7 @@ class L6470(object):
             return
         
         # Limit value to 10 bits.
-        MaxSpeed = min(MaxSpeed, 0x03FF)
+        MaxSpeed = min(MaxSpeed, 15625)
         
         self.setParam(self.REG_MAX_SPEED, self.maxMinspeedToStepTick(MaxSpeed), 2)
 
