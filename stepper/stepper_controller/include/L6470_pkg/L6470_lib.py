@@ -527,31 +527,31 @@ class L6470(object):
             return
         
         # Limit value to 10 bits.
-        ThresholdSpeed = min(ThresholdSpeed, 0x03FF)
+        ThresholdSpeed = min(ThresholdSpeed, 15625)
 
-        self.setParam(self.REG_FS_SPD, self.maxMinSpeedToStepTick(ThresholdSpeed), 2)
+        self.setParam(self.REG_FS_SPD, self.maxMinspeedToStepTick(ThresholdSpeed), 2)
 
 
     # SetKvals
     # Range is 0.996*12V=11.952V with a resolution of 0.004*12V=0.048V
     # Reg range is KVAL_HOLD, KVAL_RUN, KVAL_ACC, KVAL_DEC
     # RegVal range is 0-255 
-    def setKvalHold(self, Reg, RegVal):
+    def setKvalHold(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
         self.setParam(self.REG_KVAL_HOLD, RegVal, 1)
 
-    def setKvalRun(self, Reg, RegVal):
+    def setKvalRun(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
         self.setParam(self.REG_KVAL_RUN, RegVal, 1)
 
-    def setKvalAcc(self, Reg, RegVal):
+    def setKvalAcc(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
         self.setParam(self.REG_KVAL_ACC, RegVal, 1)
 
-    def setKvalDec(self, Reg, RegVal):
+    def setKvalDec(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0  
         self.setParam(self.REG_KVAL_DEC, RegVal, 1)
@@ -607,21 +607,21 @@ class L6470(object):
     def getADCOut(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal, 1)
+        self.setParam(self.ADC_OUT, RegVal, 1)
 
     #The OCD_TH register contains the overcurrent threshold value (see Section 6.9 on page
     #29). The available range is from 375 mA to 6 A, in steps of 375 mA, as shown in Table 15.
     def setOCDThresold(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal, 1)
+        self.setParam(self.REG_OCD_TH, RegVal, 1)
 
     #The STALL_TH register contains the stall detection threshold value (see Section 7.2 on
     #page 35). The available range is from 31.25 mA to 4 A with a resolution of 31.25 mA.
     def setStallThreshold(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
-        self.setParam(self.REG_ST_SLP, RegVal, 1)
+        self.setParam(self.REG_STALL_TH, RegVal, 1)
 
 
     # SetStepMode command
