@@ -13,6 +13,11 @@ class PCA9530:
     # Identifier of both LEDs. Useful to issue a command to both LEDs at the same time.
     LED_BOTH = 2
     
+    # ID of the BLINK0
+    BLINK0 = 0
+    # ID of the BLINK1
+    BLINK1 = 1
+    
     # ==============================================================================================
     # Controller registers
     # The addresses of the different usable registers of the PCA9530 controller.
@@ -31,23 +36,19 @@ class PCA9530:
     # The PSC0 is used to program the period of the PWM output.
     # The period of BLINK0 = (PSC0 + 1) / 152
     REG_PSC0  = 0x01
-    PSC0_VALUE = 0xFF
     # The PWM0 register determines the duty cycle of BLINK0. The outputs are LOW (LED on)
     # when the count is less than the value in PWM0 and HIGH (LED off) when it is greater. If
     # PWM0 is programmed with 00h, then the PWM0 output is always HIGH (LED off).
     # The duty cycle of BLINK0 = PWM0 / 256.
     REG_PWM0  = 0x02
-    PMW0_VALUE = 0xFF
     # PSC1 is used to program the period of the PWM output.
     # The period of BLINK1 = (PSC1 + 1) / 152
     REG_PSC1  = 0x03
-    PSC1_VALUE = PSC0_VALUE
     # The PWM1 register determines the duty cycle of BLINK1. The outputs are LOW (LED on)
     # when the count is less than the value in PWM1 and HIGH (LED off) when it is greater.
     # If PWM1 is programmed with 00h, then the PWM1 output is always HIGH (LED off).
     # The duty cycle of BLINK1 = PWM1 / 256
     REG_PWM1  = 0x04
-    PMW1_VALUE = PMW0_VALUE
     # The LS0 LED select register determines the mode in which individual LEDs operate.
     REG_LS0 = 0x05
     LS0_LED0 = 0x02
@@ -101,17 +102,6 @@ class PCA9530:
     def deviceWriteBlock(self, register, data):
         self._I2C.write_i2c_block_data(self.DEVICE_ADDRESS & self.AUTO_INCREMENT_FLAG, register, data)
 
-    def percentToDutyCycle(self, percent):
-        # Clamp to percentage limits.
-        if percent > 100:
-            percent = 100
-        elif percent < 0:
-            percent = 0
-            
-    # The duty cycle of is a value between 0x00 and 0xFF (8 bits).
-    duty = int((percent / 100) * 255)
-    return duty
-
     # Set the specified LED (or LEDs) to the given state and write the current states of both 
     # LEDs to the controller register.
     # Does nothing if the ID does not exist.
@@ -124,7 +114,7 @@ class PCA9530:
             self._LED0 = ledState
             self._LED1 = ledState
         else:
-	    print "PCA9530: Invalid LED identifier %d" % (ledID)
+	        print "PCA9530: Invalid LED identifier %d" % (ledID)
             return
 
         led0Value = self.LS0_LED0 & self._LED0
@@ -157,76 +147,64 @@ class PCA9530:
     # ==============================================================================================
     # Blink configuration commands
     # ==============================================================================================
-    # Set Blink 0
-    # Set a new value for both the period and duty cycle of BLINK0 (PSC0 and PMW0 registers).
+    # Set Blink
+    # Set a new value for both the period and duty cycle for the given blink ID 
+    # (BLINK0 or BLINK1).
     # Using this function is more efficient than setting the period and duty cycle separately.
-    # See setBlink0Period and setBlink0DutyCycle for the format of both values.
-    def setBlink0(self, period, dutyCycle):
+    # See setBlinkPeriod and setBlinkDutyCycle for the format of both values.
+    def setBlink(self, blinkID, period, dutyCycle):
+        if blinkID == self.BLINK0:
+            register = self.REG_PCS0
+        elif blinkID == self.BLINK1:
+            register = self.REG_PCS1
+        else:
+            print "PCA9530: Invalid BLINK identifier %s" % (blinkID)
+            return
+        
         # Limit period to an 8 bits value.
-        if (period > 0xFF):
-            period = 0xFF
+        period = int(min(period, 0xFF))
 
-        # Convert duty cycle percentage.
-        duty = percentToDutyCycle(dutyCycle)
+        # Limit duty cycle to an 8 bits value.
+        dutyCycle = int(min(dutyCycle, 0xFF))
 
-        data = [self.PSC0_VALUE & period, self.PMW0_VALUE & duty]
-        self.deviceWriteBlock(self.REG_PCS0, data)
+        # Write block will use the register auto-increment to setup both registers.
+        data = [period, duty]
+        self.deviceWriteBlock(register, data)
 
+    # Set Blink Duty Cycle
+    # Set a new value for the PMW register (8 bits value) for the given blink ID.
+    # The PWM register determines the duty cycle. The outputs are LOW (LED on)
+    # when the count is less than the value in PWM and HIGH (LED off) when it is greater. If
+    # PWM is programmed with 0x00, then the PWM output is always HIGH (LED off).
+    # The duty cycle of BLINK = PWM / 255
+    def setBlinkDutyCycle(self, blinkID, dutyCycle):
+        if blinkID == self.BLINK0:
+            register = self.REG_PMW0
+        elif blinkID == self.BLINK1:
+            register = self.REG_PMW1
+        else:
+            print "PCA9530: Invalid BLINK identifier %s" % (blinkID)
+            return
+        
+        # Limit duty cycle to an 8 bits value.
+        dutyCycle = int(min(dutyCycle, 0xFF))
 
-    # Set Blink 0 Duty Cycle
-    # Set a new value for the PMW0 register (8 bits value).
-    
-    def setBlink0DutyCycle(self, dutyCycle):
-        # Convert duty cycle percentage.
-        duty = percentToDutyCycle(dutyCycle)
+        self.deviceWrite(register, dutyCycle)
 
-        self.deviceWrite(self.REG_PMW0, self.PMW0_VALUE & duty)
-
-    # Set Blink 0 Period
-    # Set a new value for the PSC0 register (8 bits value).
-    # PSC0 is used to program the period of the PWM0 output.
-    # The period of BLINK0 (in seconds) is: (PSC0 + 1) / 152
-    def setBlink0Period(self, period):
+    # Set Blink Period
+    # Set a new value for the PSC register (8 bits value) for the given blink ID.
+    # PSC is used to program the period of the PWM output.
+    # The period of BLINK (in seconds) is: (PSC + 1) / 152
+    def setBlinkPeriod(self, blinkID, period):
+        if blinkID == self.BLINK0:
+            register = self.REG_PCS0
+        elif blinkID == self.BLINK1:
+            register = self.REG_PCS1
+        else:
+            print "PCA9530: Invalid BLINK identifier %s" % (blinkID)
+            return
+        
         # Limit to an 8 bits value.
-        if (period > 0xFF):
-            period = 0xFF
+        period = int(min(period, 0xFF))
 
-        self.deviceWrite(self.REG_PCS0, self.PSC0_VALUE & period)
-
-    # Set Blink 1
-    # Set a new value for both the period and duty cycle of BLINK1 (PSC1 and PMW1 registers).
-    # Using this function is more efficient than setting the period and duty cycle separately.
-    # See setBlink1Period and setBlink1DutyCycle for the format of both values.
-    def setBlink1(self, period, dutyCycle):
-        # Limit period to an 8 bits value.
-        if (period > 0xFF):
-            period = 0xFF
-
-        # Convert duty cycle percentage.
-        duty = percentToDutyCycle(dutyCycle)
-
-        data = [self.PSC1_VALUE & period, self.PMW1_VALUE & duty]
-        self.deviceWriteBlock(self.REG_PCS1, data)
-
-    # Set Blink 1 Duty Cycle
-    # Set a new value for the PMW1 register (8 bits value).
-    # The PWM1 register determines the duty cycle of BLINK1. The outputs are LOW (LED on)
-    # when the count is less than the value in PWM1 and HIGH (LED off) when it is greater. If
-    # PWM1 is programmed with 0x00, then the PWM1 output is always HIGH (LED off).
-    # The duty cycle of BLINK1 = PWM1 / 256
-    def setBlink1DutyCycle(self, dutyCycle):
-        # Convert duty cycle percentage.
-        duty = percentToDutyCycle(dutyCycle)
-
-        self.deviceWrite(self.REG_PMW1, self.PMW1_VALUE & duty)
-
-    # Set Blink 1 Period
-    # Set a new value for the PSC1 register (8 bits value).
-    # PSC1 is used to program the period of the PWM1 output.
-    # The period of BLINK1 (in seconds) is: (PSC1 + 1) / 152
-    def setBlink1Period(self, period):
-        # Limit to an 8 bits value.
-        if (period > 0xFF):
-            period = 0xFF
-
-        self.deviceWrite(self.REG_PCS1, self.PSC1_VALUE & period)
+        self.deviceWrite(register, period)
