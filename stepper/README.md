@@ -1,8 +1,8 @@
-# Nodes to control and test the inter-pupillary rail stepper 
+# Nodes to control and test the inter-pupillary rail stepper
 
 Nodes :
   * stepper_controller : Control the stepper motor by issuing commands to this node. The commands are listed below.
-  
+
 ## Stepper Controller node
 
 Start node:
@@ -11,7 +11,7 @@ rosrun stepper_controller stepper_controller_node.py
 ```
 
 This node listens to publishers on:
- * /stepper_controller_topic : issue commands to the stepper motor. The motor will also publish useful state information such as when it hits a limit switch.
+ * /motor/inter_eye/command : issue commands to the stepper motor. The motor will also publish useful state information such as when it hits a limit switch.
 
 The launch file will simply start the node:
 ```
@@ -38,7 +38,7 @@ The messages are encoded in JSON. Each message represents a command to run on th
 Used to indicate the direction of the rotation:
  * clockwise: the stepper will run in a clockwise direction
  * counter-clockwise: the stepper will run in a counter-clockwise direction
- 
+
 Using a different direction name will result in the command being ignored.
 
 ##### speed (float)
@@ -62,7 +62,7 @@ This value should be between the configured MIN_SPEED (default 0 step/s) and MAX
 Used to indicate the direction of the rotation:
  * clockwise: the stepper will run in a clockwise direction
  * counter-clockwise: the stepper will run in a counter-clockwise direction
- 
+
 Using a different direction name will result in the command being ignored.
 
 ##### steps (int)
@@ -103,15 +103,12 @@ parameter value unit is equal to the selected step mode (full, half, quarter, et
 Used to indicate the type of stop to apply to the stepper:
  * hard: the stepper will stop immediately
  * soft: the stepper will stop after a deceleration as configured by the DEC register
- 
+
 Using a different stop type name will result in the command being ignored.
 
-## SPI Notes : 
+## SPI Notes :
 The SPI device consisting of the stepper can be either `/dev/spidev0.0` or `/dev/spidev0.1`. This has to be modified accordingly in:
 
 ```
 stepper_controller/src/stepper_controller_node.py
 ```
-
-
-
