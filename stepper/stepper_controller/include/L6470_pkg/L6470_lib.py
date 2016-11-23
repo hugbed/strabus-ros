@@ -611,7 +611,7 @@ class L6470(object):
 
     #The OCD_TH register contains the overcurrent threshold value (see Section 6.9 on page
     #29). The available range is from 375 mA to 6 A, in steps of 375 mA, as shown in Table 15.
-    def setOCDThresold(self, RegVal):
+    def setOCDThreshold(self, RegVal):
         if RegVal > 0xFF:
             RegVal = 0x0 
         self.setParam(self.REG_OCD_TH, RegVal, 1)

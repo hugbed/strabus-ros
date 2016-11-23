@@ -4,7 +4,7 @@
 import rospy
 
 # Stepper generated messages.
-from std_msg.msg import String
+from std_msgs.msg import String
 
 # Controller library.
 from L6470_pkg.L6470_lib import L6470
@@ -26,7 +26,7 @@ import json
 def messageCallback(message):
     # Unpack JSON message
     data = json.loads(message.data)
-    
+
     # Execute the given command with its parameters.
     command = data['command']
     if command == "run":
@@ -52,20 +52,20 @@ def runCommand(direction, speed):
         rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (speed, direction))
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized run direction for \"%s\"" % (direction))
-    
+
     # Run the stepper if the direction is appropriate.
     if (direction == "clockwise"):
         _controller.run(L6470.DIR_CLOCKWISE, speed)
     elif (run.direction == "counter-clockwise"):
         _controller.run(L6470.DIR_COUNTER_CLOCKWISE, speed)
-    
+
 # Move the stepper by the given number of microsteps.
 def moveCommand(direction, steps):
     if (direction == "clockwise" or direction == "counter-clockwise"):
         rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s rotation" % (steps, direction))
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized move direction for \"%s\"" % (direction))
-    
+
     # Issue a Move command to the stepper if the direction is appropriate.
     if (direction == "clockwise"):
         _controller.move(L6470.DIR_CLOCKWISE, steps)
@@ -78,7 +78,7 @@ def goToCommand(position):
 
     # Issue a GoTo command to the stepper.
     _controller.goTo(position)
-    
+
 # Stop the stepper, either immediately or after a deceleration curve.
 def stopCommand(type):
     if (type == "hard" or type == "soft"):
@@ -98,9 +98,24 @@ if __name__ == '__main__':
     _controller = L6470()
     _controller.open(0, 0)
 
+    # Init motor/drive.
+    _controller.status() # Must be done if the drive was in overcurrent alarm.
+    _controller.hardDisengage() # If the drive is powered, settings are ignored.
+    _controller.setStepMode(7)
+    _controller.setThresholdSpeed(15600)
+    _controller.setOCDThreshold(0x04)
+    _controller.setStartSlope(0x0000)
+    _controller.setIntersectSpeed(0x0000)
+    _controller.setAccFinalSlope(63)
+    _controller.setKvalHold(25)
+    _controller.setKvalRun(55)
+    _controller.setKvalAcc(55)
+    _controller.setKvalDec(55)
+    _controller.setMaxSpeed(700)
+
     rospy.init_node("stepper_controller_node", anonymous=True)
-    rospy.Subscriber("stepper_controller_topic", String, messageCallback)
+    rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
 
     rospy.spin()
-    
+
     _controller.close()
