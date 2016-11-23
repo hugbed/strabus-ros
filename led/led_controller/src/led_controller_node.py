@@ -7,7 +7,7 @@ import rospy
 from PCA9530_pkg.PCA9530_lib import PCA9530
 
 # ROS standard messages.
-from std_msg.msg import String
+from std_msgs.msg import String
 
 # IMPORTANT #
 # See the node's README file for further details on what parameters the node expects.
