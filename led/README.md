@@ -25,12 +25,10 @@ The messages are encoded in JSON. Each message represents an action to run on th
 ```
 {
     "action" : "command",
-    "parameters" : [
-        {
-            "id" : "LED0",
-            "command" : "BLINK1"
-        }
-    ]
+    "parameters" : {
+		"id" : "LED0",
+		"command" : "BLINK1"
+	}
 }
 ```
 
@@ -55,13 +53,11 @@ Using a different command name will result in the action being ignored.
 ```
 {
     "action" : "config",
-    "parameters" : [
-        {
-            "id" : "BLINK0",
-            "config" : "duty-cycle",
-			"value" : 128
-        }
-    ]
+    "parameters" : {
+		"id" : "BLINK0",
+		"config" : "duty-cycle",
+		"value" : 128
+	}
 }
 ```
 

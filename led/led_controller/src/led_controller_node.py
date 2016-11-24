@@ -15,14 +15,12 @@ from std_msgs.msg import String
 # Callback used to translate the received JSON message to an LED controller command.
 # Expecting something like this (example for the LED0 on command):
 # {
-#    "action" : "command",
-#    "parameters" : [
-#        {
-#            "id" : "LED0",
-#            "command" : "on"
-#        }
-#    ]
-#}
+#     "action" : "command",
+#     "parameters" : {
+#         "id" : "LED0",
+#         "command" : "on"
+#     }
+# }
 def messageCallback(message):
     # Unpack JSON message
     data = json.loads(message.data)
@@ -30,10 +28,10 @@ def messageCallback(message):
     # Execute the given action with its parameters.
     action = data['action']
     if action == "command":
-        parameters = data['parameters'][0]
+        parameters = data['parameters']
         command(parameters['id'], parameters['command'])
     elif action == "config":
-        parameters = data['parameters'][0]
+        parameters = data['parameters']
         command(parameters['id'], parameters['config'], parameters['value'])
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized action \"%s\"" % (action))
