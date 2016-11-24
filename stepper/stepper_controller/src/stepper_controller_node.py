@@ -16,33 +16,34 @@ import json
 # Expecting something like this (example for the run command):
 # {
 #    "command" : "run",
-#    "parameters" : [
-#        {
-#            "direction" : "clockwise",
-#            "speed" : 800.0
-#        }
-#    ]
+#    "parameters" : {
+#        "direction" : "clockwise",
+#        "speed" : 800.0
+#    }
 #}
 def messageCallback(message):
-    # Unpack JSON message
-    data = json.loads(message.data)
+    try:
+        # Unpack JSON message
+        data = json.loads(message.data)
 
-    # Execute the given command with its parameters.
-    command = data['command']
-    if command == "run":
-        parameters = data['parameters'][0]
-        runCommand(parameters['direction'], parameters['speed'])
-    elif command == "move":
-        parameters = data['parameters'][0]
-        moveCommand(parameters['direction'], parameters['steps'])
-    elif command == "goTo":
-        parameters = data['parameters'][0]
-        goToCommand(parameters['position'])
-    elif command == "stop":
-        parameters = data['parameters'][0]
-        stopCommand(parameters['type'])
-    else:
-        rospy.logerr(rospy.get_caller_id() + ": Unrecognized command \"%s\"" % (command))
+        # Execute the given command with its parameters.
+        command = data.get('command', None)
+        if command == "run":
+            parameters = data['parameters']
+            runCommand(parameters['direction'], parameters['speed'])
+        elif command == "move":
+            parameters = data['parameters']
+            moveCommand(parameters['direction'], parameters['steps'])
+        elif command == "goTo":
+            parameters = data['parameters']
+            goToCommand(parameters['position'])
+        elif command == "stop":
+            parameters = data['parameters']
+            stopCommand(parameters['type'])
+        else:
+            rospy.logerr(rospy.get_caller_id() + ": Unrecognized command \"%s\"" % (command))
+    except ValueError as e:
+        rospy.logerr(rospy.get_caller_id() + ": Error decoding JSON \"%s\"" % (str(e)))
 
 
 # Run the stepper in the given direction and at the given speed.

@@ -25,12 +25,10 @@ The messages are encoded in JSON. Each message represents a command to run on th
 ```
 {
     "command" : "run",
-    "parameters" : [
-        {
-            "direction" : "clockwise",
-            "speed" : 800.0
-        }
-    ]
+    "parameters" : {
+        "direction" : "clockwise",
+        "speed" : 800.0
+    }
 }
 ```
 
@@ -49,12 +47,10 @@ This value should be between the configured MIN_SPEED (default 0 step/s) and MAX
 ```
 {
     "command" : "move",
-    "parameters" : [
-        {
-            "direction" : "clockwise",
-            "steps" : 450
-        }
-    ]
+    "parameters" : {
+        "direction" : "clockwise",
+        "steps" : 450
+    }
 }
 ```
 
@@ -74,11 +70,9 @@ value unit is equal to the selected step mode (full, half, quarter, etc.).
 ```
 {
     "command" : "goTo",
-    "parameters" : [
-        {
-            "position" : 680
-        }
-    ]
+    "parameters" : {
+        "position" : 680
+    }
 }
 ```
 
@@ -91,11 +85,9 @@ parameter value unit is equal to the selected step mode (full, half, quarter, et
 ```
 {
     "command" : "stop",
-    "parameters" : [
-        {
+    "parameters" : {
             "type" : "soft"
-        }
-    ]
+    }
 }
 ```
 
