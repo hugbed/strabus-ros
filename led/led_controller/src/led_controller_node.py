@@ -6,7 +6,7 @@ import rospy
 # Controller lib
 from PCA9530_pkg.PCA9530_lib import PCA9530
 
-# ROS standard messages.
+# Import ROS standard messages.
 from std_msgs.msg import String
 
 # IMPORTANT #
