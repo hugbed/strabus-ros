@@ -36,3 +36,9 @@ Then reboot.
 
 (see https://nonhazardo.us/raspberry/pi/tft/spi/device/tree/2016/05/30/raspberry_pi_zero_spi_screen.html)
 
+### Hide the mighty cursor
+Since we have a fullscreen app running on the main display, we remove the cursor with unclutter.
+
+```
+$ unclutter
+```
