@@ -4,19 +4,21 @@ Nodes :
   * led_controller_node : Control up to 2 LEDs by issuing commands and configuring blink registers. The commands and configuration options are listed below.
 
 ## LED Controller node
+### Starting the node
 
-Start node:
+The launch file allows to start the node for a specific optical arm side:
 ```
-rosrun led_controller led_controller_node.py
+roslaunch led_controller led_controller.launch side:=left
 ```
 
-This node requires publishers on:
- * /led_controller_topic : issue actions to the LED controller.
+The possible side names are:
+ * left: left optical arm
+ * right: right optical arm
 
-The launch file will simply start the node:
-```
-roslaunch led_controller led_controller.launch
-```
+It is not recommended to use any other name.
+
+The node will then require publishers on (i.e. side:=left):
+ * /left/led/action : issue actions to the left LED controller.
 
 ### Messages format
 The messages are encoded in JSON. Each message represents an action to run on the LED controller.

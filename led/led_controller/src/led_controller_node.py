@@ -22,19 +22,22 @@ from std_msgs.msg import String
 #     }
 # }
 def messageCallback(message):
-    # Unpack JSON message
-    data = json.loads(message.data)
-    
-    # Execute the given action with its parameters.
-    action = data['action']
-    if action == "command":
-        parameters = data['parameters']
-        command(parameters['id'], parameters['command'])
-    elif action == "config":
-        parameters = data['parameters']
-        command(parameters['id'], parameters['config'], parameters['value'])
-    else:
-        rospy.logerr(rospy.get_caller_id() + ": Unrecognized action \"%s\"" % (action))
+    try:
+        # Unpack JSON message
+        data = json.loads(message.data)
+        
+        # Execute the given action with its parameters.
+        action = data['action']
+        if action == "command":
+            parameters = data['parameters']
+            command(parameters['id'], parameters['command'])
+        elif action == "config":
+            parameters = data['parameters']
+            command(parameters['id'], parameters['config'], parameters['value'])
+        else:
+            rospy.logerr(rospy.get_caller_id() + ": Unrecognized action \"%s\"" % (action))
+    except ValueError as e:
+        rospy.logerr(rospy.get_caller_id() + ": Error decoding JSON \"%s\"" % (str(e)))
 
 # Issue a command to the LED controller.
 def command(id, command):
@@ -90,7 +93,7 @@ if __name__ == '__main__':
     _controller.open(0)
 
     rospy.init_node("led_controller_node", anonymous=True)
-    rospy.Subscriber("led_controller_topic", String, messageCallback)
+    rospy.Subscriber("action", String, messageCallback)
 
     rospy.spin()
     

@@ -1,3 +1,6 @@
 <launch>
-	<node name="led_controller" pkg="led_controller" type="led_controller_node" />
+	<arg name="side"/>
+	<group ns="$(arg side)/led">
+		<node name="led_controller" pkg="led_controller" type="led_controller_node" />
+	</group>
 </launch>
