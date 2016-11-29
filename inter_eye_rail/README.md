@@ -1,25 +1,25 @@
-# Nodes to control and test the inter-pupillary rail stepper
+# Nodes to control and test the inter-pupillary rail
 
 Nodes :
-  * stepper_controller : Control the stepper motor by issuing commands to this node. The commands are listed below.
+  * rail_controller : Control the inter-pupillary rail by issuing commands to this node.
 
-## Stepper Controller node
+## Rail controller node
 
 Start node:
 ```
-rosrun stepper_controller stepper_controller_node.py
+rosrun rail_controller rail_controller_node.py
 ```
 
 This node listens to publishers on:
- * /motor/inter_eye/command : issue commands to the stepper motor. The motor will also publish useful state information such as when it hits a limit switch.
+ * /motor/inter_eye/command : issue commands to the rail controller.
 
 The launch file will simply start the node:
 ```
-roslaunch stepper_controller stepper_controller.launch
+roslaunch rail_controller rail_controller.launch
 ```
 
 ### Messages format
-The messages are encoded in JSON. Each message represents a command to run on the stepper motor.
+The messages are encoded in JSON. Each message represents a command to run on the rail controller.
 
 #### run command
 ```
@@ -99,8 +99,9 @@ Used to indicate the type of stop to apply to the stepper:
 Using a different stop type name will result in the command being ignored.
 
 ## SPI Notes :
-The SPI device consisting of the stepper can be either `/dev/spidev0.0` or `/dev/spidev0.1`. This has to be modified accordingly in:
+The SPI stepper motor controller can be either `/dev/spidev0.0` or `/dev/spidev0.1`. 
+This has to be modified accordingly in:
 
 ```
-stepper_controller/src/stepper_controller_node.py
+rail_controller/src/rail_controller_node.py
 ```

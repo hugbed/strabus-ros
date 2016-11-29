@@ -1,3 +1,0 @@
-<launch>
-	<node name="stepper_controller" pkg="stepper_controller" type="stepper_controller_node" />
-</launch>

@@ -3,7 +3,7 @@
 # ROS packages.
 import rospy
 
-# Stepper generated messages.
+# Standard messages.
 from std_msgs.msg import String
 
 # Controller library.
@@ -12,7 +12,7 @@ from L6470_pkg.L6470_lib import L6470
 # JSON tool
 import json
 
-# Callback used to translate the received JSON message to a stepper command.
+# Callback used to translate the received JSON message to a rail command.
 # Expecting something like this (example for the run command):
 # {
 #    "command" : "run",
@@ -102,7 +102,8 @@ if __name__ == '__main__':
     # Init motor/drive.
     _controller.status() # Must be done if the drive was in overcurrent alarm.
     _controller.hardDisengage() # If the drive is powered, settings are ignored.
-    _controller.setStepMode(7)
+    _controller.setStepMode(L6470.STEP_SEL_128)
+    # TODO: Set to hardstop on SW detect.
     _controller.setThresholdSpeed(15600)
     _controller.setOCDThreshold(0x04)
     _controller.setStartSlope(0x0000)
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     _controller.setKvalDec(55)
     _controller.setMaxSpeed(700)
 
-    rospy.init_node("stepper_controller_node", anonymous=True)
+    rospy.init_node("rail_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
 
     rospy.spin()
