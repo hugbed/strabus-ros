@@ -82,6 +82,8 @@ Note that the position value is always in agreement with the selected step mode;
 parameter value unit is equal to the selected step mode (full, half, quarter, etc.).
 
 #### stop command
+Stop the movement of the rail. If it is not moving, the command does nothing.
+
 ```
 {
     "command" : "stop",
@@ -92,9 +94,9 @@ parameter value unit is equal to the selected step mode (full, half, quarter, et
 ```
 
 ##### type (string)
-Used to indicate the type of stop to apply to the stepper:
- * hard: the stepper will stop immediately
- * soft: the stepper will stop after a deceleration as configured by the DEC register
+Used to indicate the type of stop to apply to the rail:
+ * hard: the rail will stop immediately
+ * soft: the rail will stop after a brief deceleration
 
 Using a different stop type name will result in the command being ignored.
 

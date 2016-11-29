@@ -80,14 +80,14 @@ def goToCommand(position):
     # Issue a GoTo command to the stepper.
     _controller.goTo(position)
 
-# Stop the stepper, either immediately or after a deceleration curve.
+# Stop the rail, either immediately or after a deceleration curve.
 def stopCommand(type):
     if (type == "hard" or type == "soft"):
         rospy.loginfo(rospy.get_caller_id() + ": %s stop" % (type))
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized stop type for \"%s\"" % (type))
 
-    # Issue a stop command to the stepper.
+    # Issue a stop command to the stepper controller.
     if (type == "hard"):
         _controller.hardStop()
     elif (type == "soft"):
@@ -95,7 +95,7 @@ def stopCommand(type):
 
 # Main node function.
 if __name__ == '__main__':
-    # Open SPI controller.
+    # Open the SPI stepper controller.
     _controller = L6470()
     _controller.open(0, 0)
 
