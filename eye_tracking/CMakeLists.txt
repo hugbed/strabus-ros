@@ -128,7 +128,7 @@ include_directories(
 ## either from message generation or dynamic reconfigure
 # add_dependencies(eye_tracking ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-set(SOURCES 
+set(SOURCES
 	src/main.cpp
  	src/findEyeCenter.cpp
  	src/helpers.cpp
@@ -136,7 +136,8 @@ set(SOURCES
  	include/findEyeCenter.h
  	include/helpers.h
  	include/eyeTracker.h
- 	include/helpers.h include/kalmanFilter.h)
+ 	include/helpers.h
+        include/kalmanFilter.h)
 
 ## Declare a C++ executable
  add_executable(eye_tracking_node 

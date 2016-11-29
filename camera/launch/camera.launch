@@ -1,4 +1,7 @@
 <launch>
-	<node name="pi_cam" pkg="raspicam" type="raspicam_node" args="_width:=200 _height:=100"/>
-	<node name="video_server" pkg="web_video_server" type="web_video_server" args="_image_transport:=compressed"/>
+	<arg name="side"/>
+	<group ns="$(arg side)">
+		<node name="pi_cam" pkg="raspicam" type="raspicam_node" args="_width:=200 _height:=200"/>
+		<node name="video_server" pkg="web_video_server" type="web_video_server" args="_image_transport:=compressed"/>
+	</group>
 </launch>

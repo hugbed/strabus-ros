@@ -1,0 +1,7 @@
+<launch>
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
+	<arg name="ns" /> 
+	<group ns="$(arg ns)">
+		<node name="ros_manager" pkg="ros_manager" type="rosManager.py" respawn="true" respawn_delay="5"/>
+	</group>
+</launch>
