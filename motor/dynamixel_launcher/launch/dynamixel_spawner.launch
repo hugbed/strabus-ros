@@ -1,0 +1,13 @@
+<launch>
+    <!-- Load controller configuration to parameter server --> 
+    <rosparam file="$(find dynamixel_launcher)/config/dynamixel_joint_controllers.yaml" command="load"/>
+
+    <!-- start specified joint controllers -->
+    <node name="dynamixel_controller_spawner" pkg="dynamixel_controllers" type="controller_spawner.py"
+          args="--manager=dxl_manager
+                --port=horizontal_vertical_port
+                --type=simple
+                horizontal_controller
+                vertical_controller"
+          output="screen"/>
+</launch>
