@@ -351,7 +351,7 @@ class L6470(object):
         if Direction != self.DIR_CLOCKWISE or Direction != self.DIR_COUNTER_CLOCKWISE:
             return
 
-        # Limit posiition to a 22 bits number
+        # Limit position to a 22 bits number
         Position = min(Position, 0x003FFFFF)
         
         self.sendCmd3(self.CMD_GOTODIR | Direction, int(Position))
