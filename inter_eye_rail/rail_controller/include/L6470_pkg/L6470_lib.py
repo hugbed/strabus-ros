@@ -133,6 +133,18 @@ class L6470(object):
     ALARM_STALL_DETECTION_B = 0x20
     ALARM_SWITCH_TURN_ON = 0x40
     ALARM_WRONG_IGNORED_CMD = 0x80
+    
+    # ==============================================================================================
+    # CONFIG fields
+    # ==============================================================================================
+    # The CONFIG register allows the configuration of different controller parameters.
+    # See section 9.1.21 on page 49 for more details.
+    # The following values are ordered with the pattern:
+    #  - A mask of the field in the CONFIG register.
+    #  - The possible values, in accordance with the mask.
+    CONFIG_SW_MODE_MASK =     0x0010
+    CONFIG_SW_MODE_HARDSTOP = 0x0010
+    CONFIG_SW_MODE_USER =     0x0000
 
     # ==============================================================================================
     # Open and close functions.
@@ -296,7 +308,7 @@ class L6470(object):
         return self.sendCmd(self.CMD_GETPARAM | Param, self.valueToMSBytes(0, nbBytes))
 
     # Run command
-    # Speed in in step/s. As a reference, there are 200 steps in a full rotation.
+    # Speed is in full step/s. As a reference, there are 200 full steps in a full rotation.
     def run(self, Direction, Speed):
         if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
             print "L6470.run: Invalid direction %d" % (Direction)
@@ -445,6 +457,24 @@ class L6470(object):
     # Stepper command shortcuts
     # These functions are shortcuts for using the stepper commands with a specific register.
     # ==============================================================================================
+    # CurrentAcceleration command
+    # Obtain the configured acceleration, in step/s^2.
+    # This acceleration value is used for soft starts of the stepper.
+    def currentAcceleration(self):
+        # Obtain value in ACC register in step/tick^2 and convert to step/s^2.
+        Acc = self.accToStepSec(self.getParam(self.REG_ACC, 2))
+        
+        return Acc
+    
+    # CurrentDeceleration command
+    # Obtain the configured deceleration, in step/s^2.
+    # This deceleration value is used for soft stops of the stepper.
+    def currentDeceleration(self):
+        # Obtain value in DEC register in step/tick^2 and convert to step/s^2.
+        Dec = self.accToStepSec(self.getParam(self.REG_DEC, 2))
+        
+        return Dec
+    
     # CurrentPosition command
     # Obtain the current absolute position of the stepper.
     def currentPosition(self):
@@ -457,6 +487,27 @@ class L6470(object):
                 
         return Pos
 
+    # CurrentSpeed command
+    # Obtain the speed at which the stepper is currently moving, in step/s.
+    def currentSpeed(self):
+        # Obtain value in SPEED register in step/tick and convert to step/s.
+        Speed = self.speedToStepSec(self.getParam(self.REG_SPEED, 3))
+        
+        return Speed
+    
+    # GetConfig command
+    # Fetch the 16 bits value in the CONFIG register (see section 9.1.21 on page 49).
+    def getConfig(self):
+        # Obtain config.
+        return self.getParam(self.REG_CONFIG, 2)
+    
+    # GetStatus command
+    # Fetch the 16 bits value in the STATUS register.
+    # This command does not reset the warning flags and error states.
+    def getStatus(self):
+        # Obtain status.
+        return self.getParam(self.REG_STATUS, 2)
+    
     # MarkPosition command
     # Obtain the current marked position of the controller.
     # The mark position is a saved position to which the GoMark command can easily go.
@@ -469,32 +520,6 @@ class L6470(object):
             Mark = Mark - (1 << 22)  # Compute negative value.
                 
         return Mark
-
-    # CurrentSpeed command
-    # Obtain the speed at which the stepper is currently moving, in step/s.
-    def currentSpeed(self):
-        # Obtain value in SPEED register in step/tick and convert to step/s.
-        Speed = self.speedToStepSec(self.getParam(self.REG_SPEED, 3))
-        
-        return Speed
-
-    # CurrentAcceleration command
-    # Obtain the configured acceleration, in step/s^2.
-    # This acceleration value is used for soft starts of the stepper.
-    def currentAcceleration(self):
-        # Obtain value in ACC register in step/tick^2 and convert to step/s^2.
-        Acc = self.accToStepSec(self.getParam(self.REG_ACC, 2))
-        
-        return Acc
-
-    # CurrentDeceleration command
-    # Obtain the configured deceleration, in step/s^2.
-    # This deceleration value is used for soft stops of the stepper.
-    def currentDeceleration(self):
-        # Obtain value in DEC register in step/tick^2 and convert to step/s^2.
-        Dec = self.accToStepSec(self.getParam(self.REG_DEC, 2))
-        
-        return Dec
 
     # SetMinSpeed command
     # Set a new minimum speed for the stepper, in step/s.
@@ -652,14 +677,14 @@ class L6470(object):
         self.setParam(self.REG_ALARM_EN, Alarms, 1)
 
     # SetConfig command
-    # Not implemented for now.
-    # See datasheet for default values.
-    def setConfig(self):
-        return
-
-    # GetStatus command
-    # Fetch the 16 bits value in the STATUS register.
-    # This command does not reset the warning flags and error states.
-    def getStatus(self):
-        # Obtain status.
-        return self.getParam(self.REG_STATUS, 2)
+    # Set the CONFIG register (see section 9.1.21 on page 49).
+    # The whole 16-bit config value has to be provided. If, for instance, only one field has to 
+    # be changed, read the register value first, modify the config field and write the whole new 
+    # 16-bit config value.
+    def setConfig(self, Config):
+        # If the config value is invalid, we don't want to mess with the register.
+        if (Config > 0xFFFF):
+            print "L6470.setConfig: Invalid configuration value (greater than 16 bits)"
+            return
+        
+        self.setParam(self.REG_CONFIG, Config, 2)

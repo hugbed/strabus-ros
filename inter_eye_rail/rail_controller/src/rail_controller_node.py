@@ -12,6 +12,56 @@ from L6470_pkg.L6470_lib import L6470
 # JSON tool
 import json
 
+# GPIO
+import RPi.GPIO as GPIO
+
+# =================================================================================================
+# GPIO setup
+# =================================================================================================
+GPIO.setmode(GPIO.BCM)
+
+# GPIO 23 is used for stepper controller interrupts, for example when a limit switch is hit. 
+GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# Callback used when the controller rises a flag event.
+def flagCallback(channel):  
+    print "falling edge detected on 23"
+  
+# Interrupt script execution when a falling edge occurs on input 23. 
+GPIO.add_event_detect(17, GPIO.FALLING, callback=flagCallback)
+
+# =================================================================================================
+# Conversion constants
+# =================================================================================================
+# The number of full steps for each rotation of the stepper.
+STEPS_PER_TURN = 200
+
+# The number of microsteps for each rotation of the stepper.
+# This value is in accordance with the configured step mode in the stepper initialization.
+MICROSTEPS_PER_TURN = STEPS_PER_TURN * 128
+
+# The distance traveled by the rail for each full turn of the stepper.
+# Multiplied by 2 because both arms of the rail move away or towards each other for each move.
+DISTANCE_PER_TURN = 2540 * 2
+
+# The inter-pupillary distance traveled by each microstep.
+DISTANCE_PER_MICROSTEP = DISTANCE_PER_TURN / MICROSTEPS_PER_TURN
+
+# The inter-pupillary distance traveled by each full step.
+DISTANCE_PER_STEP = DISTANCE_PER_TURN / STEPS_PER_TURN
+
+# The number of microsteps in each micrometer of inter-pupillary distance traveled.
+MICROSTEPS_PER_MICROMETER = MICROSTEPS_PER_TURN / DISTANCE_PER_TURN
+
+# The number of full steps in each micrometer of inter-pupillary distance traveled.
+STEPS_PER_MICROMETER = STEPS_PER_TURN / DISTANCE_PER_TURN
+
+# The inter-pupillary distance when the rail is at microstep position 0.
+DISTANCE_OFFSET = 0
+
+# =================================================================================================
+# Commands
+# =================================================================================================
 # Callback used to translate the received JSON message to a rail command.
 # Expecting something like this (example for the move command):
 # {
@@ -59,7 +109,7 @@ def moveCommand(speed):
         rospy.loginfo(rospy.get_caller_id() + ": Move speed = 0; ignoring command.")
     
     # Move the stepper.
-    # TODO: convert speed to step/s
+    stepSpeed = abs(speed) * STEPS_PER_MICROMETER
     _controller.run(direction, stepSpeed)
 
 # Move By command
@@ -67,8 +117,9 @@ def moveCommand(speed):
 # The rail will move until a stop command is issued, a limit switch is hit or until the target 
 # distance is reached.
 # 
-# speed: the distance to move the rail, in µm
+# distance: the distance to move the rail, in µm
 def moveByCommand(distance):
+    # TODO: Limit distance to calibrated rail inter-pupillary limits.
     if (distance > 0):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail by %d µm" % (distance))
         direction = L6470.DIR_CLOCKWISE
@@ -79,7 +130,7 @@ def moveByCommand(distance):
         rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
         
     # Move the stepper by the given distance.
-    # TODO: convert distance to steps
+    steps = round(abs(distance) * MICROSTEPS_PER_MICROMETER)
     _controller.move(direction, steps)
 
 # Move To command
@@ -87,9 +138,13 @@ def moveByCommand(distance):
 # The rail will move until a stop command is issued, a limit switch is hit or until the target 
 # position is reached.
 # 
-# position: the position to move the rail to, in µm
-def moveToCommand(position):
-    # TODO: compare with current position to determine direction.
+# targetPos: the position to move the rail to, in µm
+def moveToCommand(targetPos):
+    # TODO: Limit position to calibrated rail inter-pupillary limits.
+    curStep = _controller.currentPosition()
+    curPos = (curStep * DISTANCE_PER_MICROSTEP) + DISTANCE_OFFSET
+    targetStep = round((targetPos - curPos - DISTANCE_OFFSET) * MICROSTEPS_PER_MICROMETER)
+    delta = targetStep - curStep
     
     if (delta > 0):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail to %d µm" % (position))
@@ -101,8 +156,7 @@ def moveToCommand(position):
         rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
 
     # Move the stepper to the given position.
-    # TODO: convert position to step position
-    _controller.goToDir(direction, stepPos)
+    _controller.goToDir(direction, targetStep)
 
 # Stop the rail, either immediately or after a deceleration curve.
 # If the rail is not currently moving, this command does nothing.
@@ -119,7 +173,9 @@ def stopCommand(type):
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized stop type for \"%s\"" % (type))
 
-# Main node function.
+# =================================================================================================
+# Main node function
+# =================================================================================================
 if __name__ == '__main__':
     # Open the SPI stepper controller.
     _controller = L6470()
@@ -129,7 +185,6 @@ if __name__ == '__main__':
     _controller.status() # Must be done if the controller was in overcurrent alarm.
     _controller.hardDisengage() # If the controller is powered, settings are ignored.
     _controller.setStepMode(L6470.STEP_SEL_128)
-    # TODO: Set to hardstop on SW detect.
     _controller.setThresholdSpeed(15600)
     _controller.setOCDThreshold(0x04)
     _controller.setStartSlope(0x0000)
@@ -140,7 +195,12 @@ if __name__ == '__main__':
     _controller.setKvalAcc(55)
     _controller.setKvalDec(55)
     _controller.setMaxSpeed(700)
+    
+    # Set the controller to hard stop on SW (limit switch) detect.
+    config = _controller.getConfig()
+    _controller.setConfig(config | L6470.CONFIG_SW_MODE_HARDSTOP)
 
+    # Initialize ROS node.
     rospy.init_node("rail_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
 
