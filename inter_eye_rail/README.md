@@ -21,66 +21,69 @@ roslaunch rail_controller rail_controller.launch
 ### Messages format
 The messages are encoded in JSON. Each message represents a command to run on the rail controller.
 
-#### run command
+#### Move command
 ```
 {
-    "command" : "run",
+    "command" : "move",
     "parameters" : {
-        "direction" : "clockwise",
         "speed" : 800.0
     }
 }
 ```
 
-##### direction (string)
-Used to indicate the direction of the rotation:
- * clockwise: the stepper will run in a clockwise direction
- * counter-clockwise: the stepper will run in a counter-clockwise direction
-
-Using a different direction name will result in the command being ignored.
-
 ##### speed (float)
-Used to indicate at which speed the stepper will run.
-This value should be between the configured MIN_SPEED (default 0 step/s) and MAX_SPEED (default 991.8 step/s). Otherwise, the stepper's speed is clamped to one of these values.
+Used to indicate at which speed the rail will move, in micrometers/s.
+If this value should exceed the configured MIN_SPEED (default 0 step/s) and MAX_SPEED 
+(default 991.8 step/s) of the stepper motor, the stepper's speed is clamped to one of these 
+values.
 
-#### move command
+Note that the sign of the speed value determines the direction of the movement:
+ * speed > 0: the rail will open; the optical arms will move away from each other.
+ * speed < 0: the rail will close; the optical arms will move towards each other.
+ 
+A speed of 0 will result in the command being ignored.
+
+#### Move By command
 ```
 {
-    "command" : "move",
+    "command" : "moveBy",
     "parameters" : {
-        "direction" : "clockwise",
-        "steps" : 450
+        "distance" : 4500.0
     }
 }
 ```
 
-##### direction (string)
-Used to indicate the direction of the rotation:
- * clockwise: the stepper will run in a clockwise direction
- * counter-clockwise: the stepper will run in a counter-clockwise direction
+##### distance (float)
+Used to indicate the amount of distance by which the rail will move, in micrometers.
+This value is associated with the inter-pupillary distance, meaning that each optical arm
+will move by half of this distance.
 
-Using a different direction name will result in the command being ignored.
+Note that the sign of the distance value determines the direction of the movement:
+ * distance > 0: the rail will open; the optical arms will move away from each other.
+ * distance < 0: the rail will close; the optical arms will move towards each other.
+ 
+A distance of 0 will result in the command being ignored.
 
-##### steps (int)
-Used to indicate the number of microsteps by which the stepper will move.
-The steps value is in agreement with the selected step mode; the parameter
-value unit is equal to the selected step mode (full, half, quarter, etc.).
-
-#### goTo command
+#### Move To command
 ```
 {
-    "command" : "goTo",
+    "command" : "moveTo",
     "parameters" : {
-        "position" : 680
+        "position" : 35000.0
     }
 }
 ```
 
-##### position (int)
-Used to indicate at which position the stepper will go to.
-Note that the position value is always in agreement with the selected step mode; the
-parameter value unit is equal to the selected step mode (full, half, quarter, etc.).
+##### position (float)
+Used to indicate the amount of distance by which the rail will move, in micrometers.
+This value is associated with the inter-pupillary distance, meaning that each optical arm
+will move by half of this distance.
 
+Note that the sign of the distance value determines the direction of the movement:
+ * distance > 0: the rail will open; the optical arms will move away from each other.
+ * distance < 0: the rail will close; the optical arms will move towards each other.
+ 
+A distance of 0 will result in the command being ignored.
 #### stop command
 Stop the movement of the rail. If it is not moving, the command does nothing.
 

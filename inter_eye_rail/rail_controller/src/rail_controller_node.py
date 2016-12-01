@@ -24,8 +24,26 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Callback used when the controller rises a flag event.
-def flagCallback(channel):  
-    print "falling edge detected on 23"
+def flagCallback(channel):
+    # Determine the alarm that cause the interrupt.
+    status = _controller.status()
+    if (status & L6470.STATUS_SW_EN):
+        # Reverse previous direction.
+        if (_lastDirection == L6470.DIR_CLOCKWISE):
+            _lastDirection = L6470.DIR_COUNTER_CLOCKWISE
+            
+            # Opening limit switch was hit: set position as mark.
+            action = L6470.ACT_COPY
+        elif (_lastDirection == L6470.DIR_COUNTER_CLOCKWISE):
+            _lastDirection = L6470.DIR_CLOCKWISE
+            
+            # Closing limit switch was hit: set position as home.
+            action = L6470.ACT_RESET
+        else:
+            print "ERROR: Controller node in invalid direction state."
+            return
+         
+        _controller.releaseSW(_lastDirection)
   
 # Interrupt script execution when a falling edge occurs on input 23. 
 GPIO.add_event_detect(17, GPIO.FALLING, callback=flagCallback)
@@ -79,11 +97,11 @@ def messageCallback(message):
         # Execute the given command with its parameters.
         command = data.get('command', None)
         parameters = data['parameters']
-        if command == "run":
-            runCommand(parameters['direction'], parameters['speed'])
-        elif command == "move":
-            moveCommand(parameters['direction'], parameters['steps'])
-        elif command == "goTo":
+        if command == "move":
+            runCommand(parameters['speed'])
+        elif command == "moveBy":
+            moveCommand(parameters['distance'])
+        elif command == "moveTo":
             goToCommand(parameters['position'])
         elif command == "stop":
             stopCommand(parameters['type'])
@@ -92,6 +110,20 @@ def messageCallback(message):
     except ValueError as e:
         rospy.logerr(rospy.get_caller_id() + ": Error decoding JSON \"%s\"" % (str(e)))
 
+# Calibrate command
+# 
+def calibrateCommand():
+    _lastDirection = L6470.DIR_CLOCKWISE
+    _controller.run(_lastDirection, 5000)
+    
+    # TODO: Wait for limit switch
+
+    _lastDirection = L6470.DIR_COUNTER_CLOCKWISE
+    _controller.run(_lastDirection, 5000)
+    
+    # TODO: Wait for limit switch
+    
+    # TODO: move rail to default inter-pupillary position
 
 # Move command
 # Move the rail at the given speed.
@@ -110,6 +142,7 @@ def moveCommand(speed):
     
     # Move the stepper.
     stepSpeed = abs(speed) * STEPS_PER_MICROMETER
+    _lastDirection = direction
     _controller.run(direction, stepSpeed)
 
 # Move By command
@@ -131,6 +164,7 @@ def moveByCommand(distance):
         
     # Move the stepper by the given distance.
     steps = round(abs(distance) * MICROSTEPS_PER_MICROMETER)
+    _lastDirection = direction
     _controller.move(direction, steps)
 
 # Move To command
@@ -156,6 +190,7 @@ def moveToCommand(targetPos):
         rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
 
     # Move the stepper to the given position.
+    _lastDirection = direction
     _controller.goToDir(direction, targetStep)
 
 # Stop the rail, either immediately or after a deceleration curve.

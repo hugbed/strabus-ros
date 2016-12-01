@@ -112,12 +112,12 @@ class L6470(object):
     # The numbers represent the fraction of step (ex.: 1/32 microstep).
     STEP_SEL_FULL = 0x00
     STEP_SEL_HALF = 0x01
-    STEP_SEL_4 = 0x02
-    STEP_SEL_8	 = 0x03
-    STEP_SEL_16 = 0x04
-    STEP_SEL_32 = 0x05
-    STEP_SEL_64 = 0x06
-    STEP_SEL_128 = 0x07
+    STEP_SEL_4    = 0x02
+    STEP_SEL_8	  = 0x03
+    STEP_SEL_16   = 0x04
+    STEP_SEL_32   = 0x05
+    STEP_SEL_64   = 0x06
+    STEP_SEL_128  = 0x07
     
     # ==============================================================================================
     # Alarm values
@@ -125,13 +125,13 @@ class L6470(object):
     # The ALARM_EN register can be used to configure which alarms are active.
     # The alarm configuration fits on a single bit, so every bit represents a single alarm.
     ALARM_EN_MASK = 0xFF
-    ALARM_OVERCURRENT 	 = 0x01
-    ALARM_THERMAL_SHUTDOWN = 0x02
-    ALARM_THERMAL_WARNING = 0x04
-    ALARM_UNDERVOLTAGE = 0x08
+    ALARM_OVERCURRENT 	    = 0x01
+    ALARM_THERMAL_SHUTDOWN  = 0x02
+    ALARM_THERMAL_WARNING   = 0x04
+    ALARM_UNDERVOLTAGE      = 0x08
     ALARM_STALL_DETECTION_A = 0x10
     ALARM_STALL_DETECTION_B = 0x20
-    ALARM_SWITCH_TURN_ON = 0x40
+    ALARM_SWITCH_TURN_ON    = 0x40
     ALARM_WRONG_IGNORED_CMD = 0x80
     
     # ==============================================================================================
@@ -145,6 +145,15 @@ class L6470(object):
     CONFIG_SW_MODE_MASK =     0x0010
     CONFIG_SW_MODE_HARDSTOP = 0x0010
     CONFIG_SW_MODE_USER =     0x0000
+    
+    # ==============================================================================================
+    # STATUS fields
+    # ==============================================================================================
+    # The STATUS register allows to retrieve different status information of the controller.
+    # See section 9.1.22 on page 55 for more details.
+    # The following values are masks that allow for a convenient extraction of the fields
+    # in the register.
+    STATUS_SW_EN = 0x0008
 
     # ==============================================================================================
     # Open and close functions.
@@ -445,7 +454,7 @@ class L6470(object):
 
     # GetStatus command
     # Fetch the 16 bits value in the STATUS register.
-    # Reset every warning flag and error state. Using GetParam(STATUS) does not reset these flags.
+    # Reset every warning flag and error state. Using getStatus() does not reset these flags.
     def status(self):
         # Obtain status.
         Status = self.sendCmd3(self.CMD_GETSTATUS, 0x000000)
@@ -520,6 +529,19 @@ class L6470(object):
             Mark = Mark - (1 << 22)  # Compute negative value.
                 
         return Mark
+    
+    # SetConfig command
+    # Set the CONFIG register (see section 9.1.21 on page 49).
+    # The whole 16-bit config value has to be provided. If, for instance, only one field has to 
+    # be changed, read the register value first, modify the config field and write the whole new 
+    # 16-bit config value.
+    def setConfig(self, Config):
+        # If the config value is invalid, we don't want to mess with the register.
+        if (Config > 0xFFFF):
+            print "L6470.setConfig: Invalid configuration value (greater than 16 bits)"
+            return
+        
+        self.setParam(self.REG_CONFIG, Config, 2)
 
     # SetMinSpeed command
     # Set a new minimum speed for the stepper, in step/s.
@@ -675,16 +697,3 @@ class L6470(object):
         Alarms = min(Alarms, 0xFF)
                 
         self.setParam(self.REG_ALARM_EN, Alarms, 1)
-
-    # SetConfig command
-    # Set the CONFIG register (see section 9.1.21 on page 49).
-    # The whole 16-bit config value has to be provided. If, for instance, only one field has to 
-    # be changed, read the register value first, modify the config field and write the whole new 
-    # 16-bit config value.
-    def setConfig(self, Config):
-        # If the config value is invalid, we don't want to mess with the register.
-        if (Config > 0xFFFF):
-            print "L6470.setConfig: Invalid configuration value (greater than 16 bits)"
-            return
-        
-        self.setParam(self.REG_CONFIG, Config, 2)
