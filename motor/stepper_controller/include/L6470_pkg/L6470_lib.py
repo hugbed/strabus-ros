@@ -133,6 +133,18 @@ class L6470(object):
     ALARM_STALL_DETECTION_B = 0x20
     ALARM_SWITCH_TURN_ON = 0x40
     ALARM_WRONG_IGNORED_CMD = 0x80
+    
+    # ==============================================================================================
+    # CONFIG fields
+    # ==============================================================================================
+    # The CONFIG register allows the configuration of different controller parameters.
+    # See section 9.1.21 on page 49 for more details.
+    # The following values are ordered with the pattern:
+    #  - A mask of the field in the CONFIG register.
+    #  - The possible values, in accordance with the mask.
+    CONFIG_SW_MODE_MASK =     0x0010
+    CONFIG_SW_MODE_HARDSTOP = 0x0010
+    CONFIG_SW_MODE_USER =     0x0000
 
     # ==============================================================================================
     # Open and close functions.
@@ -491,6 +503,25 @@ class L6470(object):
         Dec = self.accToStepSec(self.getParam(self.REG_DEC, 2))
         
         return Dec
+    
+    # GetConfig command
+    # Fetch the 16 bits value in the CONFIG register (see section 9.1.21 on page 49).
+    def getConfig(self):
+        # Obtain config.
+        return self.getParam(self.REG_CONFIG, 2)
+    
+    # SetConfig command
+    # Set the CONFIG register (see section 9.1.21 on page 49).
+    # The whole 16-bit config value has to be provided. If, for instance, only one field has to 
+    # be changed, read the register value first, modify the config field and write the whole new 
+    # 16-bit config value.
+    def setConfig(self, Config):
+        # If the config value is invalid, we don't want to mess with the register.
+        if (Config > 0xFFFF):
+            print "L6470.setConfig: Invalid configuration value (greater than 16 bits)"
+            return
+        
+        self.setParam(self.REG_CONFIG, Config, 2)
 
     # SetMinSpeed command
     # Set a new minimum speed for the stepper, in step/s.
