@@ -99,10 +99,10 @@ if __name__ == '__main__':
     _controller = L6470()
     _controller.open(0, 0)
 
-    # Init motor/drive.
-    _controller.status() # Must be done if the drive was in overcurrent alarm.
-    _controller.hardDisengage() # If the drive is powered, settings are ignored.
-    _controller.setStepMode(7)
+    # Initialize controller.
+    _controller.status() # Must be done if the controller was in overcurrent alarm.
+    _controller.hardDisengage() # If the controller is powered, settings are ignored.
+    _controller.setStepMode(L6470.STEP_SEL_128)
     _controller.setThresholdSpeed(15600)
     _controller.setOCDThreshold(0x04)
     _controller.setStartSlope(0x0000)
@@ -113,7 +113,12 @@ if __name__ == '__main__':
     _controller.setKvalAcc(55)
     _controller.setKvalDec(55)
     _controller.setMaxSpeed(700)
+    
+    # Set the controller to hard stop on SW (limit switch) detect.
+    config = _controller.getConfig()
+    _controller.setConfig(config | L6470.CONFIG_SW_MODE_HARDSTOP)
 
+    # Initialize ROS node.
     rospy.init_node("stepper_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
 
