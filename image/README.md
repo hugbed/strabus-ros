@@ -7,18 +7,21 @@ Nodes :
 
 Start node:
 ```
-rosrun image_viewer_fs image_viewer_fs_node
+rosrun image_viewer_fs image_viewer_fs_node side:=left
 ```
 
-This node requires publishers on
- * /imageAngle : the image will be rotated with this angle (in degrees)
- * /imageScale : the image will be scaled down (0.0 < scale <= 1.0)
- * /imageFilname : the path to the image to load from disk
+The side is to publish the topics on the correct parent namespace (i.e : `/left/image/angle`)
+
+This node requires publishers on (i.e : for side:=left)
+ * /left/image/angle : the image will be rotated with this angle (in degrees)
+ * /left/image/scale : the image will be scaled down (0.0 < scale <= 1.0)
+ * /left/image/filename : the path to the image to load from disk
+ * /left/image/show : to toggle the image display (image or black screen)
 
 
 To test the node with dummy publishers, use the launch file:
 ```
-roslaunch image_viewer_fs image_viewer_fs.launch
+roslaunch image_viewer_fs test_publish.launch
 ```
 This will start nodes to publish the angle, the scale and the image filename (/home/jon/doge.jpg).
 It will then launch the image viewer node.
@@ -38,6 +41,7 @@ Then reboot.
 
 ### Hide the mighty cursor
 Since we have a fullscreen app running on the main display, we remove the cursor with unclutter.
+Curse you, cursor!
 
 ```
 $ unclutter
