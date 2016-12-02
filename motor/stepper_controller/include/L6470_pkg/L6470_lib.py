@@ -27,9 +27,9 @@ class L6470(object):
     DIR_CLOCKWISE = 0x01
     DIR_COUNTER_CLOCKWISE = 0x00
     
-    # Register actions performed on a GoUntil or a ReleaseSW.
+    # Register actions
     ACT_RESET = 0x00
-    ACT_COPY = 0x01
+    ACT_COPY = 0x08
     
     # ==============================================================================================
     # Stepper commands
@@ -358,10 +358,9 @@ class L6470(object):
 
     # GoUntil command
     # Move the stepper at the given speed until a falling edge is detected on the SW pin of the 
-    # controller (external switch activated). The SW_MODE in the CONFIG register determines if a 
-    # hard stop or a soft stop is performed.
-    # The action determines whether the ABS_POS register is reset (L6470.ACT_RESET) or copied
-    # (L6470.ACT_COPY) in the MARK register.
+    # controller. The SW_MODE in the CONFIG register determines if a hard stop or a soft stop is 
+    # performed.
+    # The action determines whether the ABS_POS register is reset or copied in the MARK register.
     # The speed is in steps/s.
     def goUntil(self, Action, Direction, Speed):
         if Action != self.ACT_RESET and Action != self.ACT_COPY:
@@ -377,10 +376,7 @@ class L6470(object):
         self.sendCmd3(self.CMD_GOUNTIL | Action | Direction, SpeedTick)
 
     # ReleaseSW command
-    # Move the stepper at minimum speed in the given direction until a rising edge is detected
-    # on the SW pin (external switch deactivated), then performs a hard stop.
-    # The action determines whether the ABS_POS register is reset (L6470.ACT_RESET) or copied
-    # (L6470.ACT_COPY) in the MARK register.
+    # Same as GoUntil, but at miniumum speed and always with a hard stop.
     # This minimum speed is the highest value between the MIN_SPEED register and 5 steps/s.
     def releaseSW(self, Action, Direction):
         if Action != self.ACT_RESET and Action != self.ACT_COPY:
