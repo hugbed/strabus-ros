@@ -3,9 +3,6 @@
     <include file="$(find camera)/launch/camera.launch">
       <arg name="side" value="$(arg side)"/>
     </include>
-    <include file="$(find image_viewer_fs)/launch/image_viewer_fs.launch">
-      <arg name="side" value="$(arg side)"/>
-    </include>
     <include file="$(find dynamixel_launcher)/launch/dynamixel.launch">
       <arg name="side" value="$(arg side)"/>
     </include>

@@ -37,9 +37,9 @@
                 bgr;
                 buswidth = <8>;
 
-                reset-gpios = <&gpio 26 0>;
+                reset-gpios = <&gpio 18 0>;
                 dc-gpios = <&gpio 23 0>;
-                led-gpios = <&gpio 20 0>;
+                led-gpios = <&gpio 26 0>;
                 debug = <0>;
 
             };

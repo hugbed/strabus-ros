@@ -17,6 +17,6 @@ def listener():
 if __name__ == '__main__':
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(LCD_PIN, GPIO.OUT)
-    GPIO.output(LCD_PIN, GPIO.LOW)
+    GPIO.output(LCD_PIN, GPIO.HIGH)
     listener()
 

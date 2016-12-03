@@ -24,7 +24,7 @@ The device tree configuration file is in [tft22.dts](tft22.dts).
 Compile the device tree file (make sure you're using dtc you built previously).
 
 ```
-dtc -@ -O dtb -I dts -o tft22.dtbo tft22.dts
+dtc -@ -O dtb -I dts -o tft22.dtbo tft23.dts
 ```
 
 Move the dtb file to /boot/overlays
@@ -36,7 +36,7 @@ sudo cp tft22.dtbo /boot/overlays
 Add the following to the bottom of /boot/config.txt
 
 ```
-dtparams=spi=on
+dtparam=spi=on
 dtoverlay=tft22
 ```
 

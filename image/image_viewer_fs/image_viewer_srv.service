@@ -1,0 +1,10 @@
+[Unit]
+Description=Boot for ROS image viewer
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/home/pi/Projects/Strabus/SetupScripts/launch_image_viewer.sh
+
+[Install]
+WantedBy=multi-user.target
