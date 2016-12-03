@@ -12,6 +12,11 @@ from L6470_pkg.L6470_lib import L6470
 # JSON tool
 import json
 
+# GPIO lib
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(24, GPIO.OUT)
+
 # Callback used to translate the received JSON message to a stepper command.
 # Expecting something like this (example for the run command):
 # {
@@ -24,6 +29,7 @@ import json
 def messageCallback(message):
     try:
         # Unpack JSON message
+	print message.data
         data = json.loads(message.data)
 
         # Execute the given command with its parameters.
@@ -57,7 +63,7 @@ def runCommand(direction, speed):
     # Run the stepper if the direction is appropriate.
     if (direction == "clockwise"):
         _controller.run(L6470.DIR_CLOCKWISE, speed)
-    elif (run.direction == "counter-clockwise"):
+    elif (direction == "counter-clockwise"):
         _controller.run(L6470.DIR_COUNTER_CLOCKWISE, speed)
 
 # Move the stepper by the given number of microsteps.
@@ -95,14 +101,20 @@ def stopCommand(type):
 
 # Main node function.
 if __name__ == '__main__':
+    print "Preparing to launch Stepper controller node..."
+
     # Open SPI controller.
     _controller = L6470()
     _controller.open(0, 0)
 
+    # Reset controller to default.
+    GPIO.output(24, 0)
+    GPIO.output(24, 1)
+
     # Initialize controller.
     _controller.status() # Must be done if the controller was in overcurrent alarm.
     _controller.hardDisengage() # If the controller is powered, settings are ignored.
-    _controller.setStepMode(L6470.STEP_SEL_128)
+    _controller.setStepMode(L6470.STEP_SEL_FULL)
     _controller.setThresholdSpeed(15600)
     _controller.setOCDThreshold(0x04)
     _controller.setStartSlope(0x0000)
@@ -113,14 +125,12 @@ if __name__ == '__main__':
     _controller.setKvalAcc(55)
     _controller.setKvalDec(55)
     _controller.setMaxSpeed(700)
-    
-    # Set the controller to hard stop on SW (limit switch) detect.
-    config = _controller.getConfig()
-    _controller.setConfig(config | L6470.CONFIG_SW_MODE_HARDSTOP)
 
     # Initialize ROS node.
     rospy.init_node("stepper_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
+
+    print "Stepper controller node successfully launched!"
 
     rospy.spin()
 

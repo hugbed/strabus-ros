@@ -1,6 +1,1 @@
-# Should work
-"{'data':'{\"command\":\"stop\",\"parameters\":[{\"type\":\"soft\"}]}'}"
-"{'data':'{\"command\":\"stop\",\"parameters\":[{\"type\":\"hard\"}]}'}"
-
-# Should not work but not break
-"{'data':'{\"command\":\"stop\",\"parameters\":[\"type\":\"soft\"]}'}"
+"{\"command\":\"move\",\"parameters\":{\"direction\":\"clockwise\",\"steps\":51200}}"
