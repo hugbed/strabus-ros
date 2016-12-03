@@ -27,6 +27,19 @@ cv::Point unscalePoint(cv::Point p, cv::Rect origSize) {
     return cv::Point(x,y);
 }
 
+cv::Point scalePoint(cv::Point p, cv::Rect origSize) {
+    float ratio = (origSize.width/((float)FAST_EYE_WIDTH));
+    int x = round(p.x / ratio);
+    int y = round(p.y / ratio);
+    return cv::Point(x,y);
+}
+
+int scaleLength(float l, cv::Rect origSize) {
+    float ratio = (origSize.width/((float)FAST_EYE_WIDTH));
+    int x = round(l / ratio);
+    return x;
+}
+
 void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
     cv::resize(src, dst, cv::Size(FAST_EYE_WIDTH,(((float)FAST_EYE_WIDTH)/src.cols) * src.rows));
 }
