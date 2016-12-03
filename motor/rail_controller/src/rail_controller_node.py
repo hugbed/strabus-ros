@@ -133,10 +133,10 @@ def calibrateCommand():
 def moveCommand(speed):
     if (speed > 0):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail at %d µm/s" % (speed))
-        direction = L6470.DIR_CLOCKWISE
+        direction = L6470.DIR_COUNTER_CLOCKWISE
     elif (speed < 0):
         rospy.loginfo(rospy.get_caller_id() + ": Closing the rail at %d µm/s" % (speed))
-        direction = L6470.DIR_COUNTER_CLOCKWISE
+        direction = L6470.DIR_CLOCKWISE
     else:
         rospy.loginfo(rospy.get_caller_id() + ": Move speed = 0; ignoring command.")
     
@@ -155,10 +155,10 @@ def moveByCommand(distance):
     # TODO: Limit distance to calibrated rail inter-pupillary limits.
     if (distance > 0):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail by %d µm" % (distance))
-        direction = L6470.DIR_CLOCKWISE
+        direction = L6470.DIR_COUNTER_CLOCKWISE
     elif (distance < 0):
         rospy.loginfo(rospy.get_caller_id() + ": Closing the rail by %d µm" % (distance))
-        direction = L6470.DIR_COUNTER_CLOCKWISE
+        direction = L6470.DIR_CLOCKWISE
     else:
         rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
         
@@ -182,10 +182,10 @@ def moveToCommand(targetPos):
     
     if (delta > 0):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail to %d µm" % (position))
-        direction = L6470.DIR_CLOCKWISE
+        direction = L6470.DIR_COUNTER_CLOCKWISE
     elif (delta < 0):
         rospy.loginfo(rospy.get_caller_id() + ": Closing the rail to %d µm" % (position))
-        direction = L6470.DIR_COUNTER_CLOCKWISE
+        direction = L6470.DIR_CLOCKWISE
     else:
         rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
 
