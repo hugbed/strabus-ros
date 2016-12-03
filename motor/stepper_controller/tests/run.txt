@@ -1,0 +1,1 @@
+"{\"command\":\"run\",\"parameters\":{\"direction\":\"counter-clockwise\",\"speed\":50.0}}"
