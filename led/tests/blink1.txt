@@ -1,0 +1,1 @@
+"{\"action\":\"command\",\"parameters\":{\"id\":\"BOTH\",\"command\":\"blink1\"}}"
