@@ -30,12 +30,12 @@ EyeTracker::EyeTracker()
     tracking_active = true;
     overlay_active = true;
     calibrate_center_on_next_frame = true;
-    tracking_toggle_service = nh_.advertiseService("tracking/toggleTracking", &EyeTracker::toggleTracking,this);
-    overlay_toggle_service = nh_.advertiseService("tracking/toggleOverlay", &EyeTracker::toggleOverlay,this);
+    tracking_toggle_service = nh_.advertiseService("tracking/toggle_tracking", &EyeTracker::toggleTracking,this);
+    overlay_toggle_service = nh_.advertiseService("tracking/toggle_overlay", &EyeTracker::toggleOverlay,this);
     calibration_toggle_service = nh_.advertiseService("tracking/calibrate", &EyeTracker::calibrateCenterTrigger,this);
     std::string ns = ros::this_node::getNamespace();
     clockwiseRotation = true;
-    if(ns.find("left")!= std::string::npos){
+    if(ns.find("left") == std::string::npos){
         clockwiseRotation = false;
     }
 }
@@ -61,6 +61,7 @@ bool EyeTracker::toggleOverlay(std_srvs::Empty::Request  &req, std_srvs::Empty::
 }
 
 bool EyeTracker::calibrateCenterTrigger(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res){
+    cout << "calibration request received" <<endl;
     calibrate_center_on_next_frame = true;
     return true;
 }
@@ -119,6 +120,7 @@ void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
     cv::line(frame, cv::Point(lens_center.x,0), cv::Point(lens_center.x,frame.rows), color_green, 1);
     cv::line(frame, cv::Point(0,lens_center.y), cv::Point(frame.cols,lens_center.y), color_green, 1);
     circle( frame, lens_center, lens_radius, color_green, 1, 8, 0 );
+
     /*int h_step = frame.rows/10;
     int w_step = frame.cols/10;
     for (int h = h_step/2; h<frame.rows; h+=h_step){
@@ -285,10 +287,12 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
                          std::max(1, int(point_history.size() - i) / 2));
             }
 
-            // Draw GUI on frame
-            cv::Point offset = getOffset(filteredPos, frame);
-            drawOverlay(frame, offset);
+
         }
+
+        // Draw GUI on frame
+        cv::Point offset;
+        drawOverlay(frame, offset);
 
         //Publish frame
         cv_ptr->image = frame;

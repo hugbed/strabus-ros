@@ -25,7 +25,7 @@ class PCA9530:
     # register. In other words, they are masks.
     # ==============================================================================================
     # Device address
-    DEVICE_ADDRESS = 0xC0
+    DEVICE_ADDRESS = 0x60
     # Auto-Increment flag
     AUTO_INCREMENT_FLAG = 0x10
     # The INPUT register reflects the state of the device pins.
@@ -51,7 +51,7 @@ class PCA9530:
     REG_PWM1  = 0x04
     # The LS0 LED select register determines the mode in which individual LEDs operate.
     REG_LS0 = 0x05
-    LS0_LED0 = 0x02
+    LS0_LED0 = 0x03
     LS0_LED1 = 0x0C
     
     # ==============================================================================================
@@ -75,6 +75,9 @@ class PCA9530:
     def open(self, device):
         # Configure I2C
         self._I2C = smbus.SMBus(device)
+        #Init led states
+        self._LED1 = 0
+        self._LED0 = 0
 
     # Close
     # Close the currently opened SPI connection.
@@ -114,7 +117,7 @@ class PCA9530:
             self._LED0 = ledState
             self._LED1 = ledState
         else:
-	        print "PCA9530: Invalid LED identifier %d" % (ledID)
+	    print "PCA9530: Invalid LED identifier %d" % (ledID)
             return
 
         led0Value = self.LS0_LED0 & self._LED0
