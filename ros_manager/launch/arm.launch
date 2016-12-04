@@ -9,5 +9,8 @@
     <include file="$(find led_controller)/launch/led_controller.launch">
       <arg name="side" value="$(arg side)"/>
     </include>
+    <include file="$(find eye_tracking)/launch/tracking.launch">
+      <arg name="side" value="$(arg side)"/>
+    </include>
   </group>
 </launch>

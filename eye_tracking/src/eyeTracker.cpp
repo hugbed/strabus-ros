@@ -35,7 +35,7 @@ EyeTracker::EyeTracker()
     calibration_toggle_service = nh_.advertiseService("tracking/calibrate", &EyeTracker::calibrateCenterTrigger,this);
     std::string ns = ros::this_node::getNamespace();
     clockwiseRotation = true;
-    if(ns.find("left")!= std::string::npos){
+    if(ns.find("left") == std::string::npos){
         clockwiseRotation = false;
     }
 }
