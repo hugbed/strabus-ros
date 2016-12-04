@@ -116,12 +116,15 @@ void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
         return;
     }
 
-    cv::Scalar color_green(100, 200, 0, 1);
-    cv::line(frame, cv::Point(lens_center.x,0), cv::Point(lens_center.x,frame.rows), color_green, 1);
-    cv::line(frame, cv::Point(0,lens_center.y), cv::Point(frame.cols,lens_center.y), color_green, 1);
-    circle( frame, lens_center, lens_radius, color_green, 1, 8, 0 );
+    cv::Scalar color(100, 200, 0, 1);
+    if (calibrate_center_on_next_frame){
+        color = cv::Scalar(0, 0, 200);
+    }
+    cv::line(frame, cv::Point(lens_center.x,0), cv::Point(lens_center.x,frame.rows), color, 1);
+    cv::line(frame, cv::Point(0,lens_center.y), cv::Point(frame.cols,lens_center.y), color, 1);
+    circle( frame, lens_center, lens_radius, color, 1, 8, 0 );
 
-    /*int h_step = frame.rows/10;
+    /*
     int w_step = frame.cols/10;
     for (int h = h_step/2; h<frame.rows; h+=h_step){
       cv::line(frame, cv::Point(lens_center.x - 5,h), cv::Point(lens_center.x +5,h),color_green,1);
@@ -195,7 +198,7 @@ void EyeTracker::calibrateCenter(cv::Mat frame){
         calibrate_center_on_next_frame = false;
     }
 
-   // imshow( "Hough Circle Transform Demo", frame_gray );
+    imshow( "Hough Circle Transform Demo", frame_gray );
 
 }
 
@@ -296,7 +299,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
 
         //Publish frame
         cv_ptr->image = frame;
-        //cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+        cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         image_pub_.publish(cv_ptr->toImageMsg());
 
     } else {
