@@ -1,1 +1,1 @@
-"{\"command\":\"move\",\"parameters\":{\"direction\":\"clockwise\",\"steps\":800}}"
+"{\"command\":\"move\",\"parameters\":{\"direction\":\"counter-clockwise\",\"steps\":25600}}"

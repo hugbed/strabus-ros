@@ -107,24 +107,26 @@ if __name__ == '__main__':
     _controller = L6470()
     _controller.open(0, 0)
 
-    # Reset controller to default.
-    GPIO.output(24, 0)
+    # Enable reset pin.
     GPIO.output(24, 1)
 
     # Initialize controller.
     _controller.status() # Must be done if the controller was in overcurrent alarm.
     _controller.hardDisengage() # If the controller is powered, settings are ignored.
-    _controller.setStepMode(L6470.STEP_SEL_FULL)
+    _controller.setStepMode(L6470.STEP_SEL_128)
     _controller.setThresholdSpeed(15600)
     _controller.setOCDThreshold(0x04)
     _controller.setStartSlope(0x0000)
     _controller.setIntersectSpeed(0x0000)
-    _controller.setAccFinalSlope(63)
-    _controller.setKvalHold(25)
-    _controller.setKvalRun(55)
-    _controller.setKvalAcc(55)
-    _controller.setKvalDec(55)
-    _controller.setMaxSpeed(700)
+    _controller.setAccFinalSlope(35)
+    _controller.setDecFinalSlope(35)
+    _controller.setKvalHold(5)
+    _controller.setKvalRun(45)
+    _controller.setKvalAcc(45)
+    _controller.setKvalDec(45)
+    _controller.setMaxSpeed(200)
+
+    print "Status: %s" % (bin(_controller.status()))
 
     # Initialize ROS node.
     rospy.init_node("stepper_controller_node", anonymous=True)
@@ -134,4 +136,7 @@ if __name__ == '__main__':
 
     rospy.spin()
 
+    print "Status: %s" % (bin(_controller.status()))
+
     _controller.close()
+    GPIO.output(24, 0)
