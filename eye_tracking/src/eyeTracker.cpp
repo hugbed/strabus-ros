@@ -23,6 +23,7 @@ EyeTracker::EyeTracker()
         : it_(nh_) {
     // Subscribe to input video feed and publish output video feed
     image_sub_ = it_.subscribe("camera/image", 1,
+    image_sub_ = it_.subscribe("camera/image", 1,
                                &EyeTracker::frameCallback, this);
     image_pub_ = it_.advertise("tracking/image", 1);
     maskCreated = false;
@@ -198,7 +199,7 @@ void EyeTracker::calibrateCenter(cv::Mat frame){
         calibrate_center_on_next_frame = false;
     }
 
-    imshow( "Hough Circle Transform Demo", frame_gray );
+   // imshow( "Hough Circle Transform Demo", frame_gray );
 
 }
 
@@ -299,7 +300,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
 
         //Publish frame
         cv_ptr->image = frame;
-        cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+        //cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         image_pub_.publish(cv_ptr->toImageMsg());
 
     } else {
