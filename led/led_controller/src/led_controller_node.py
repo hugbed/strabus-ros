@@ -9,6 +9,9 @@ from PCA9530_pkg.PCA9530_lib import PCA9530
 # Import ROS standard messages.
 from std_msgs.msg import String
 
+# JSON tool
+import json
+
 # IMPORTANT #
 # See the node's README file for further details on what parameters the node expects.
 
@@ -90,11 +93,10 @@ def config(id, config, value):
 # Main node function.
 if __name__ == '__main__':
     _controller = PCA9530()
-    _controller.open(0)
+    _controller.open(1)
 
     rospy.init_node("led_controller_node", anonymous=True)
     rospy.Subscriber("action", String, messageCallback)
 
     rospy.spin()
-    
     _controller.close()
