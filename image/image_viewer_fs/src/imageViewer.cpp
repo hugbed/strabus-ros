@@ -78,7 +78,14 @@ bool loadImage(std::string filename, cv::Mat &out)
 
         // insert in dict if loading succeeds
         if (target.data){
-            drawThisARGBStuffOnWhiteBackground(target, out);
+            if (target.depth() == 4) {
+                drawThisARGBStuffOnWhiteBackground(target, out);
+            } else {
+                out = target;
+            }
+
+            // horizontal flip to overcome mirror issues
+            cv::flip(out, out, 1);
 
             std::lock_guard<std::mutex> lock(g_mapMutex);
             g_images.insert(std::pair<std::string, cv::Mat>(g_filename, out));
