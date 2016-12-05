@@ -44,6 +44,7 @@ class EyeTracker {
     cv::Point lens_center;
     TickMeter tm;
     cv::Mat mask;
+    cv::Mat mask_fullsize;
     cv::Mat overlay;
     bool maskCreated;
     bool tracking_active;
@@ -63,15 +64,12 @@ public:
     ~EyeTracker();
 private:
     void frameCallback(const sensor_msgs::ImageConstPtr &msg);
-    void createMask(cv::Mat src, cv::Point center, int radius);
+    void createMask(cv::Mat src, cv::Mat src_full, cv::Point center, int radius, cv::Rect eyeRect);
     void drawOverlay(cv::Mat src, cv::Point offset);
     void drawText(cv::Mat frame, cv::Point offset);
-    bool toggleOverlay(std_srvs::Empty::Request &req,
-                       std_srvs::Empty::Response &res);
-    bool toggleTracking(std_srvs::Empty::Request &req,
-                        std_srvs::Empty::Response &res);
-    bool calibrateCenterTrigger(std_srvs::Empty::Request &req,
-                                std_srvs::Empty::Response &res);
+    bool toggleOverlay(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+    bool toggleTracking(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+    bool calibrateCenterTrigger(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
     void calibrateCenter(cv::Mat frame);
     void initLensCenter(cv::Mat frame);
 

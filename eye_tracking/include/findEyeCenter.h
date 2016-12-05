@@ -10,4 +10,5 @@ cv::Point unscalePoint(cv::Point, cv::Rect);
 cv::Point scalePoint(cv::Point, cv::Rect);
 int scaleLength(float l, cv::Rect);
 cv::Point findCenterWithBlobs(cv::Mat eye, cv::Mat mask);
+void equalizeForTube(cv::Mat eyeROI, cv::Mat mask);
 #endif

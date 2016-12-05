@@ -135,7 +135,7 @@ void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
 }
 
 cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
-    equalizeForTube(eyeROI, mask);
+    //equalizeForTube(eyeROI, mask);
     // draw eye region
     //-- Fd the gradient
     cv::Mat gradientX = computeMatXGradient(eyeROI, mask);
