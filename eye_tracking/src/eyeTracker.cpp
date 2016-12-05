@@ -151,18 +151,13 @@ void EyeTracker::createMask(cv::Mat eyeROI, cv::Mat eyeFull, cv::Point lens_cent
     maskCreated = true;
 }
 
-void EyeTracker::calibrateCenter(cv::Mat frame){
-    std::vector <cv::Mat> rgbChannels(3);
-    cv::Mat frame_gray = rgbChannels[2];
-    cv::split(frame, rgbChannels);
-    cvtColor(frame, frame_gray, CV_BGR2GRAY);
-    equalizeHist(frame_gray, frame_gray);
+void EyeTracker::calibrateCenter(cv::Mat frame_gray){
     GaussianBlur( frame_gray, frame_gray, Size(9, 9), 2, 2 );
 
     vector<Vec3f> circles;
 
     /// Apply the Hough Transform to find the circles
-    HoughCircles( frame_gray, circles, CV_HOUGH_GRADIENT, 1, frame_gray.rows/8, 80, 50, 0, 0 );
+    HoughCircles( frame_gray, circles, CV_HOUGH_GRADIENT, 1, frame_gray.rows/8, 50, 50, 0, 0 );
 
     double pixel_min, pixel_max;
     minMaxLoc(frame_gray,&pixel_min, &pixel_max);
@@ -251,7 +246,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
         }
 
         if (calibrate_center_on_next_frame){
-            calibrateCenter(frame);
+            calibrateCenter(frame_gray);
         }
 
         if (!maskCreated) {
@@ -302,11 +297,9 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
                 cv::line(frame, point_history[i], point_history[i + 1], color,
                          std::max(1, int(point_history.size() - i) / 2));
             }
-
-
         }
         if (!converted){
-            cvtColor(frame, frame, CV_GRAY2RGB);
+            cvtColor(frame_gray, frame, CV_GRAY2RGB);
         }
         // Draw GUI on frame
         cv::Point offset;
@@ -314,7 +307,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
 
         //Publish frame
         cv_ptr->image = frame;
-        // cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+        //cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         image_pub_.publish(cv_ptr->toImageMsg());
 
     } else {
