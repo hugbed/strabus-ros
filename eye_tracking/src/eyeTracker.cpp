@@ -23,7 +23,6 @@ EyeTracker::EyeTracker()
         : it_(nh_) {
     // Subscribe to input video feed and publish output video feed
     image_sub_ = it_.subscribe("camera/image", 1,
-    image_sub_ = it_.subscribe("camera/image", 1,
                                &EyeTracker::frameCallback, this);
     image_pub_ = it_.advertise("tracking/image", 1);
     maskCreated = false;
