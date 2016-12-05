@@ -46,3 +46,10 @@ Curse you, cursor!
 ```
 $ unclutter
 ```
+
+### Image viewer on boot
+To start image viewer on boot on a raspberry pi you need to follow these steps:
+
+1. Create a [systemd service](image_viewer_fs/image_viewer_srv.service) to start the ros node at launch using pi user.
+2. Create a [script](https://github.com/carapas/Strabus/tree/master/SetupScripts/launch_image_viewer.sh) that `export DISPLAY=$(Your display)` 
+3. Profit

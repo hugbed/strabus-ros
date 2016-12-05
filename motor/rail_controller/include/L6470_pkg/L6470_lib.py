@@ -23,13 +23,16 @@ class L6470(object):
     # step/tick = MAXMIN_STEP_SPEED_RATIO * step/s
     MAXMIN_STEP_SPEED_RATIO = 0.065536
     
+    # ==============================================================================================
+    # Command actions and parameters
+    # ==============================================================================================
     # Stepper directions
-    DIR_CLOCKWISE = 0x01
-    DIR_COUNTER_CLOCKWISE = 0x00
+    DIR_FORWARD = 0x01
+    DIR_REVERSE = 0x00
     
     # Register actions performed on a GoUntil or a ReleaseSW.
     ACT_RESET = 0x00
-    ACT_COPY = 0x01
+    ACT_COPY  = 0x01
     
     # ==============================================================================================
     # Stepper commands
@@ -152,8 +155,26 @@ class L6470(object):
     # The STATUS register allows to retrieve different status information of the controller.
     # See section 9.1.22 on page 55 for more details.
     # The following values are masks that allow for a convenient extraction of the fields
-    # in the register.
-    STATUS_SW_EN = 0x0008
+    # in the register, along with its corresponding right shifting number.
+    
+    # Busy flag.
+    # The BUSY flag is low when a constant speed, positioning or motion command is under 
+    # execution and is released (high) after the command has been completed.
+    STATUS_BUSY = 0x0002
+    STATUS_BUSY_SHIFT = 1
+    
+    # Switch flag.
+    # Reports the SW input status (low for open and high for closed).
+    STATUS_SW_F = 0x0004
+    STATUS_SW_F_SHIFT = 2
+    
+    # Switch turn on event.
+    STATUS_SW_EVN = 0x0008
+    STATUS_SW_EVN_SHIFT = 3
+    
+    # Stepper direction.
+    STATUS_DIR = 0x0010
+    STATUS_DIR_SHIFT = 4
 
     # ==============================================================================================
     # Open and close functions.
@@ -319,7 +340,7 @@ class L6470(object):
     # Run command
     # Speed is in full step/s. As a reference, there are 200 full steps in a full rotation.
     def run(self, Direction, Speed):
-        if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
+        if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
             print "L6470.run: Invalid direction %d" % (Direction)
             return
         if Speed <= 0:
@@ -336,7 +357,7 @@ class L6470(object):
     # In Step-Clock mode, the stepper moves by a microstep on each rising edge of the STCK pin.
     # The Step-Clock mode is aborted by motion commands such as Run, Move and GoTo.
     def stepClock(self, Direction):
-        if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
+        if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
             return
                 
         self.sendCmd(self.CMD_STEPCLOCK | Direction)
@@ -345,9 +366,11 @@ class L6470(object):
     # Move the stepper by the given number of microsteps in agreement with the selected step mode 
     # (full, half, quarter, etc.).
     def move(self, Direction, Steps):
-        if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
+        if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
+            print "L6470.run: Invalid direction %d" % (Direction)
             return
         if Steps <= 0:
+            print "L6470.move: Invalid number of steps %d" % (Steps)
             return
                 
         # Limit steps to a 22 bits number
@@ -369,7 +392,8 @@ class L6470(object):
     # Same ad GoTo, but with a forced rotation direction, which depending on that direction might 
     # not result in the shortest path.
     def goToDir(self, Direction, Position):
-        if Direction != self.DIR_CLOCKWISE or Direction != self.DIR_COUNTER_CLOCKWISE:
+        if Direction != self.DIR_FORWARD or Direction != self.DIR_REVERSE:
+            print "L6470.goToDir: Invalid direction %d" % (Direction)
             return
 
         # Limit position to a 22 bits number
@@ -386,10 +410,13 @@ class L6470(object):
     # The speed is in steps/s.
     def goUntil(self, Action, Direction, Speed):
         if Action != self.ACT_RESET and Action != self.ACT_COPY:
+            print "L6470.goUntil: Invalid action %d" % (Action)
             return
-        if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
+        if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
+            print "L6470.goUntil: Invalid direction %d" % (Direction)
             return
         if Speed <= 0:
+            print "L6470.goUntil: Invalid speed %d" % (Speed)
             return
 
         # Convert from step/s to step/tick
@@ -405,8 +432,10 @@ class L6470(object):
     # This minimum speed is the highest value between the MIN_SPEED register and 5 steps/s.
     def releaseSW(self, Action, Direction):
         if Action != self.ACT_RESET and Action != self.ACT_COPY:
+            print "L6470.releaseSW: Invalid action %d" % (Action)
             return
-        if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
+        if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
+            print "L6470.releaseSW: Invalid direction %d" % (Direction)
             return
                 
         self.sendCmd(self.CMD_RELEASESW | Action | Direction)
@@ -517,10 +546,10 @@ class L6470(object):
         # Obtain status.
         return self.getParam(self.REG_STATUS, 2)
     
-    # MarkPosition command
+    # getMark command
     # Obtain the current marked position of the controller.
     # The mark position is a saved position to which the GoMark command can easily go.
-    def markPosition(self):
+    def getMark(self):
         # Obtain position, in two's complement form.
         Mark = self.getParam(self.REG_MARK, 3)
         

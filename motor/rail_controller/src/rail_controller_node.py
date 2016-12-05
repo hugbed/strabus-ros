@@ -9,6 +9,9 @@ from std_msgs.msg import String
 # Controller library.
 from L6470_pkg.L6470_lib import L6470
 
+# Sleeping tool
+from time import sleep
+
 # JSON tool
 import json
 
@@ -22,28 +25,38 @@ GPIO.setmode(GPIO.BCM)
 
 # GPIO 23 is used for stepper controller interrupts, for example when a limit switch is hit. 
 GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+# GPIO 24 is used for the RESET pin of the stepper controller. Must be on at all times, unless 
+# a reset wants to be performed.
+GPIO.setup(24, GPIO.OUT)
 
 # Callback used when the controller rises a flag event.
 def flagCallback(channel):
-    # Determine the alarm that cause the interrupt.
+    # Determine the alarm that caused the interrupt, and reset status.
     status = _controller.status()
-    if (status & L6470.STATUS_SW_EN):
+    if (status & L6470.STATUS_SW_EVN):
+        _releasing = True
+        direction = (status & L6470.STATUS_DIR) >> L6470.STATUS_DIR_SHIFT
+        
         # Reverse previous direction.
-        if (_lastDirection == L6470.DIR_CLOCKWISE):
-            _lastDirection = L6470.DIR_COUNTER_CLOCKWISE
+        if (direction == L6470.DIR_REVERSE):
+            direction = L6470.DIR_FORWARD
             
-            # Opening limit switch was hit: set position as mark.
-            action = L6470.ACT_COPY
-        elif (_lastDirection == L6470.DIR_COUNTER_CLOCKWISE):
-            _lastDirection = L6470.DIR_CLOCKWISE
-            
-            # Closing limit switch was hit: set position as home.
+            # Opening limit switch was hit: set position as home.
             action = L6470.ACT_RESET
-        else:
-            print "ERROR: Controller node in invalid direction state."
-            return
-         
-        _controller.releaseSW(_lastDirection)
+            _homeSet = True
+        elif (direction == L6470.DIR_FORWARD):
+            direction = L6470.DIR_REVERSE
+            
+            # Closing limit switch was hit: set position as mark.
+            action = L6470.ACT_COPY
+            _markSet = True
+        
+        _controller.releaseSW(direction)
+        while (_controller.getStatus() & STATUS_BUSY != 0):
+            # Wait a bit and look again if the controller is busy.
+            sleep(0.1)
+            
+        _releasing = False
   
 # Interrupt script execution when a falling edge occurs on input 23. 
 GPIO.add_event_detect(17, GPIO.FALLING, callback=flagCallback)
@@ -97,10 +110,12 @@ def messageCallback(message):
         # Execute the given command with its parameters.
         command = data.get('command', None)
         parameters = data['parameters']
-        if command == "move":
-            runCommand(parameters['speed'])
+        if command == "calibrate":
+            calibrateCommand()
+        elif command == "move":
+            runCommand(parameters['direction'])
         elif command == "moveBy":
-            moveCommand(parameters['distance'])
+            moveCommand(parameters['distance'], parameters['direction'])
         elif command == "moveTo":
             goToCommand(parameters['position'])
         elif command == "stop":
@@ -111,61 +126,91 @@ def messageCallback(message):
         rospy.logerr(rospy.get_caller_id() + ": Error decoding JSON \"%s\"" % (str(e)))
 
 # Calibrate command
-# 
+# Perform a system calibration from one limit switch to the other.
+# The system is frozen to commands during that time.
 def calibrateCommand():
-    _lastDirection = L6470.DIR_CLOCKWISE
-    _controller.run(_lastDirection, 5000)
+    _homeSet = False
+    _markSet = False
+    _calibrating = True
     
-    # TODO: Wait for limit switch
+    # Start calibration to home position.
+    _controller.run(L6470.DIR_REVERSE, 200)
+    while (not _homeSet):
+        # Wait a bit and look again if home was set.
+        sleep(0.1)
 
-    _lastDirection = L6470.DIR_COUNTER_CLOCKWISE
-    _controller.run(_lastDirection, 5000)
-    
-    # TODO: Wait for limit switch
-    
-    # TODO: move rail to default inter-pupillary position
+    _controller.run(L6470.DIR_FORWARD, 200)
+    while (not _markSet):
+        # Wait a bit and look again if the controller is busy.
+        sleep(0.1)
+        
+    _calibrating = False
 
 # Move command
-# Move the rail at the given speed.
+# Move the rail at the maximum configured speed in the given direction.
 # The rail will move until a stop command is issued or until a limit switch is hit.
 #
-# speed: the speed at which the rail will move, in µm/s
-def moveCommand(speed):
-    if (speed > 0):
-        rospy.loginfo(rospy.get_caller_id() + ": Opening the rail at %d µm/s" % (speed))
-        direction = L6470.DIR_COUNTER_CLOCKWISE
-    elif (speed < 0):
-        rospy.loginfo(rospy.get_caller_id() + ": Closing the rail at %d µm/s" % (speed))
-        direction = L6470.DIR_CLOCKWISE
-    else:
-        rospy.loginfo(rospy.get_caller_id() + ": Move speed = 0; ignoring command.")
+# direction : the direction of the movement
+def moveCommand(direction):
+    # Ignore the command if releasing from switch or calibrating.
+    if (_releasing or _calibrating):
+        return
     
-    # Move the stepper.
-    stepSpeed = abs(speed) * STEPS_PER_MICROMETER
-    _lastDirection = direction
-    _controller.run(direction, stepSpeed)
+    # This command must run on a calibrated system.
+    if (not _homeSet or not _markSet):
+        rospy.logwarn(rospy.get_caller_id() + ": The system is not calibrated: ignoring command.")
+        return
+    
+    # Move to the rail limit according to the direction.
+    if (direction == "OPEN"):
+        rospy.loginfo(rospy.get_caller_id() + ": Opening the rail"))
+        _controller.goHome()
+    elif (direction == "CLOSE"):
+        rospy.loginfo(rospy.get_caller_id() + ": Closing the rail")
+        _controller.goMark()
+    else:
+        rospy.logerr(rospy.get_caller_id() + "Move command: Unrecognized direction %s" % (direction)))
 
 # Move By command
 # Move the rail in the given direction by the given amount of distance.
 # The rail will move until a stop command is issued, a limit switch is hit or until the target 
 # distance is reached.
 # 
-# distance: the distance to move the rail, in µm
-def moveByCommand(distance):
-    # TODO: Limit distance to calibrated rail inter-pupillary limits.
-    if (distance > 0):
+# distance:   the distance to move the rail, in µm
+# direction : the direction of the movement
+def moveByCommand(distance, direction):
+    # Ignore the command if releasing from switch or calibrating.
+    if (_releasing or _calibrating):
+        return
+    
+    # This command must run on a calibrated system.
+    if (not _homeSet or not _markSet):
+        rospy.logwarn(rospy.get_caller_id() + ": The system is not calibrated: ignoring command.")
+        return
+    
+    if (distance <= 0):
+        rospy.logwarn(rospy.get_caller_id() + "Move By command: Distance <= 0; ignoring command.")
+        return
+    
+    moveBy = round(distance * MICROSTEPS_PER_MICROMETER)
+    curStep = _controller.currentPosition()
+    
+    if (direction == "OPEN"):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail by %d µm" % (distance))
-        direction = L6470.DIR_COUNTER_CLOCKWISE
-    elif (distance < 0):
-        rospy.loginfo(rospy.get_caller_id() + ": Closing the rail by %d µm" % (distance))
-        direction = L6470.DIR_CLOCKWISE
-    else:
-        rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
         
-    # Move the stepper by the given distance.
-    steps = round(abs(distance) * MICROSTEPS_PER_MICROMETER)
-    _lastDirection = direction
-    _controller.move(direction, steps)
+        if (curStep - moveBy < 0):
+            _controller.goHome()
+        else:
+            _controller.move(L6470.DIR_REVERSE, moveBy)
+    elif (direction == "CLOSE"):
+        rospy.loginfo(rospy.get_caller_id() + ": Closing the rail by %d µm" % (distance))
+        
+        if (curStep + moveBy > _controller.getMark()):
+            _controller.goMark()
+        else:
+            _controller.move(L6470.DIR_FORWARD, moveBy)
+    else:
+        rospy.logerr(rospy.get_caller_id() + "Move By command: Unrecognized direction %s" % (direction)))
 
 # Move To command
 # Move the rail to the given position.
@@ -174,30 +219,47 @@ def moveByCommand(distance):
 # 
 # targetPos: the position to move the rail to, in µm
 def moveToCommand(targetPos):
+    # Ignore the command if releasing from switch or calibrating.
+    if (_releasing or _calibrating):
+        return
+    
+    # This command must run on a calibrated system.
+    if (not _homeSet or not _markSet):
+        rospy.logwarn(rospy.get_caller_id() + ": The system is not calibrated: ignoring command.")
+        return
+    
     # TODO: Limit position to calibrated rail inter-pupillary limits.
     curStep = _controller.currentPosition()
     curPos = (curStep * DISTANCE_PER_MICROSTEP) + DISTANCE_OFFSET
     targetStep = round((targetPos - curPos - DISTANCE_OFFSET) * MICROSTEPS_PER_MICROMETER)
     delta = targetStep - curStep
     
-    if (delta > 0):
+    if (delta < 0):
         rospy.loginfo(rospy.get_caller_id() + ": Opening the rail to %d µm" % (position))
-        direction = L6470.DIR_COUNTER_CLOCKWISE
-    elif (delta < 0):
+        
+        if (targetStep < 0):
+            _controller.goHome()
+        else:
+            _controller.goToDir(L6470.DIR_REVERSE, targetStep)
+    elif (delta > 0):
         rospy.loginfo(rospy.get_caller_id() + ": Closing the rail to %d µm" % (position))
-        direction = L6470.DIR_CLOCKWISE
+        
+        if (targetStep > _controller.getMark()):
+            _controller.goMark()
+        else:
+            _controller.goToDir(L6470.DIR_FORWARD, targetStep)
     else:
-        rospy.loginfo(rospy.get_caller_id() + ": Distance = 0; ignoring command.")
-
-    # Move the stepper to the given position.
-    _lastDirection = direction
-    _controller.goToDir(direction, targetStep)
+        rospy.logwarn(rospy.get_caller_id() + "Move To command: Distance = 0; ignoring command.")
 
 # Stop the rail, either immediately or after a deceleration curve.
 # If the rail is not currently moving, this command does nothing.
 # 
 # type: The type of stop (either "hard" or "soft")
 def stopCommand(type):
+    # Ignore the command if releasing from switch.
+    if (_releasing or _calibrating):
+        return
+    
     # Issue a stop command to the stepper controller.
     if (type == "hard"):
         rospy.loginfo(rospy.get_caller_id() + ": Hard stop")
@@ -212,9 +274,14 @@ def stopCommand(type):
 # Main node function
 # =================================================================================================
 if __name__ == '__main__':
+    print "Preparing to launch Stepper controller node..."
+    
     # Open the SPI stepper controller.
     _controller = L6470()
     _controller.open(0, 0)
+    
+    # Enable reset pin.
+    GPIO.output(24, 1)
 
     # Initialize controller.
     _controller.status() # Must be done if the controller was in overcurrent alarm.
@@ -224,21 +291,31 @@ if __name__ == '__main__':
     _controller.setOCDThreshold(0x04)
     _controller.setStartSlope(0x0000)
     _controller.setIntersectSpeed(0x0000)
-    _controller.setAccFinalSlope(63)
-    _controller.setKvalHold(25)
-    _controller.setKvalRun(55)
-    _controller.setKvalAcc(55)
-    _controller.setKvalDec(55)
-    _controller.setMaxSpeed(700)
+    _controller.setAccFinalSlope(35)
+    _controller.setDecFinalSlope(35)
+    _controller.setKvalHold(5)
+    _controller.setKvalRun(45)
+    _controller.setKvalAcc(45)
+    _controller.setKvalDec(45)
+    _controller.setMaxSpeed(200)
     
-    # Set the controller to hard stop on SW (limit switch) detect.
-    config = _controller.getConfig()
-    _controller.setConfig(config | L6470.CONFIG_SW_MODE_HARDSTOP)
+    # State flags
+    _releasing = False
+    _calibrating = False
+    _homeSet = False
+    _markSet = False
+    
+    print "Status: %s" % (bin(_controller.status()))
 
     # Initialize ROS node.
     rospy.init_node("rail_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
 
-    rospy.spin()
+    print "Stepper controller node successfully launched!"
 
+    rospy.spin()
+    
+    print "Status: %s" % (bin(_controller.status()))
+
+    GPIO.output(24, 0)
     _controller.close()

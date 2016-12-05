@@ -2,6 +2,7 @@
 	<arg name="side"/>
 	<group ns="/$(arg side)/image">
 		<param name="image_directory" type="str" value="$(optenv STRABUS_IMAGE_DIR /home/pi/Strabus/UI/app/img/)" />
-		<node name="image_viewer" pkg="image_viewer_fs" type="image_viewer_fs_node" output="screen"/>
+                <node name="image_viewer" pkg="image_viewer_fs" type="image_viewer_fs_node" output="screen"/>
+		<node name="lcd_toggle" pkg="lcd_toggle" type="lcd_toggle.py" output="screen"/>
 	</group>
 </launch>

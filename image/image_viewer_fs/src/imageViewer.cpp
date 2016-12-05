@@ -196,11 +196,9 @@ int main(int argc, char **argv)
     ros::Subscriber filenameSub = nh.subscribe("filename", 1000, filenameCallback);
     ros::Subscriber scaleSub = nh.subscribe("scale", 1000, scaleCallback);
     ros::Subscriber imageShowSub = nh.subscribe("show", 1000, imageShowCallback);
-
     cv::namedWindow("view", CV_WINDOW_NORMAL);
     cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
     cv::startWindowThread();
-
     ros::spin();
 
     cv::destroyWindow("view");
