@@ -337,8 +337,10 @@ class L6470(object):
     # (full, half, quarter, etc.).
     def move(self, Direction, Steps):
         if Direction != self.DIR_CLOCKWISE and Direction != self.DIR_COUNTER_CLOCKWISE:
+            print "L6470.move: Invalid direction %d" % (Direction)
             return
         if Steps <= 0:
+            print "L6470.move: Invalid number of steps %d" % (Steps)
             return
                 
         # Limit steps to a 22 bits number
@@ -677,12 +679,6 @@ class L6470(object):
         Alarms = min(Alarms, 0xFF)
                 
         self.setParam(self.REG_ALARM_EN, Alarms, 1)
-
-    # SetConfig command
-    # Not implemented for now.
-    # See datasheet for default values.
-    def setConfig(self):
-        return
 
     # GetStatus command
     # Fetch the 16 bits value in the STATUS register.
