@@ -78,7 +78,7 @@ bool loadImage(std::string filename, cv::Mat &out)
 
         // insert in dict if loading succeeds
         if (target.data){
-            if (target.depth() == 4) {
+            if (target.channels() == 4) {
                 drawThisARGBStuffOnWhiteBackground(target, out);
             } else {
                 out = target;
