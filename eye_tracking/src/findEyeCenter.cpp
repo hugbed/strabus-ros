@@ -109,17 +109,23 @@ void testPossibleCentersFormula(int x, int y, const cv::Mat &weight,double gx, d
 
 void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
     int sum = 0;
+    int count = 0;
+    uint8_t maxVal = 0;
+    uint8_t minVal = 255;
     for (int y = 0; y < eyeROI.rows; ++y) {
         uint8_t *eyeRow = eyeROI.ptr<uint8_t>(y);
         uint8_t *maskRow = mask.ptr<uint8_t>(y);
         for (int x = 0; x < eyeROI.cols; ++x) {
-            if (maskRow[x] >0){
+            if (maskRow[x] ==0){
                 continue;
             }
+            count++;
             sum = sum + eyeRow[x];
+            maxVal = std::max(maxVal, eyeRow[x]);
+            minVal = std::min(minVal, eyeRow[x]);
         }
     }
-    int averageBrightness = sum/(eyeROI.rows * eyeROI.cols);
+    int averageBrightness = sum/(float)count;
 
     for (int y = 0; y < eyeROI.rows; ++y) {
         uint8_t *eyeRow = eyeROI.ptr<uint8_t>(y);
@@ -128,14 +134,17 @@ void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
             if (maskRow[x] >0){
                 continue;
             }
+            //eyeRow[x] = (int) 255* (float)(eyeRow[x] +1 -minVal)/(maxVal-minVal)  ;
             eyeRow[x] = averageBrightness;
         }
     }
     equalizeHist(eyeROI, eyeROI);
+
+
 }
 
 cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
-    //equalizeForTube(eyeROI, mask);
+    equalizeForTube(eyeROI, mask);
     // draw eye region
     //-- Fd the gradient
     cv::Mat gradientX = computeMatXGradient(eyeROI, mask);
@@ -235,54 +244,6 @@ cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {
         cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
     }
     return maxP;
-}
-
-cv::Point findCenterWithBlobs(cv::Mat eye, cv::Mat mask){
-    //equalizeForTube(eye, mask);
-
-    vector<vector<Point> > contours;
-    Mat eye2;
-    eye.copyTo(eye2);
-    findContours(eye, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
-
-    Mat cimage = Mat::zeros(eye.size(), CV_8UC3);
-
-    for(size_t i = 0; i < contours.size(); i++)
-    {
-        size_t count = contours[i].size();
-        if( count < 6 )
-            continue;
-
-        Mat pointsf;
-        Mat(contours[i]).convertTo(pointsf, CV_32F);
-        RotatedRect box = fitEllipse(pointsf);
-
-        if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*30 )
-            continue;
-        drawContours(eye2, contours, (int)i, Scalar::all(255), 1, 8);
-
-        ellipse(eye2, box, Scalar(0,0,255), 1, CV_AA);
-        ellipse(eye2, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
-        //ellipse(cimage, box, Scalar(0,0,255), 1, CV_AA);
-        //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
-        Point2f vtx[4];
-        box.points(vtx);
-        for( int j = 0; j < 4; j++ ) {
-            //line(cimage, vtx[j], vtx[(j + 1) % 4], Scalar(0, 255, 0), 5, CV_AA);
-            line(eye2, vtx[j], vtx[(j + 1) % 4], Scalar(255, 255, 255), 1, CV_AA);
-        }
-    }
-
-    imshow("eye_ellipse", eye2);
-    imshow("result", cimage);
-
-
-   /* std::vector<cv::KeyPoint> keypoints;
-    detector->detect(eye, keypoints);
-    cv::Mat im_with_keypoints;
-    //cv::drawKeypoints( eye, keypoints, im_with_keypoints, cv::Scalar(0,0,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-    imshow("Keypoints",im_with_keypoints);*/
-    return cv::Point(0,0);
 }
 
 #pragma mark Postprocessing

@@ -157,7 +157,7 @@ void EyeTracker::calibrateCenter(cv::Mat frame_gray){
     vector<Vec3f> circles;
 
     /// Apply the Hough Transform to find the circles
-    HoughCircles( frame_gray, circles, CV_HOUGH_GRADIENT, 1, frame_gray.rows/8, 50, 50, 0, 0 );
+    HoughCircles( frame_gray, circles, CV_HOUGH_GRADIENT, 1, frame_gray.rows/8, 75, 50, 0, 0 );
 
     double pixel_min, pixel_max;
     minMaxLoc(frame_gray,&pixel_min, &pixel_max);
@@ -193,7 +193,7 @@ void EyeTracker::calibrateCenter(cv::Mat frame_gray){
             lens_center.y += p.y/center_count;
             lens_radius += r/center_count;
           }
-        lens_radius = lens_radius/1.2   ;
+        lens_radius = lens_radius/1.15   ;
         //So new mask gets generated
         maskCreated = false;
 
@@ -237,7 +237,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
         cv::Mat frame_gray = rgbChannels[2];
         cv::split(frame, rgbChannels);
         cvtColor(frame, frame_gray, CV_BGR2GRAY);
-        equalizeHist(frame_gray, frame_gray);
+        //equalizeHist(frame_gray, frame_gray);
 
         if (!filter.isInit()){
             filter.initialize(frame);
@@ -254,14 +254,15 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
             scaleToFastSize(frame_gray, eye);
             createMask(eye, frame_gray, lens_center, lens_radius, eyeRect);
         }
-        equalizeForTube(frame_gray, mask_fullsize);
+        //imshow( "mask", mask_fullsize );
+
 
         bool converted = false;
         if (tracking_active) {
             cv::Mat eye;
             scaleToFastSize(frame_gray, eye);
 
-            //imshow( "mask", mask );
+
             //Get the eye center using gradient algorithm
             float confidence = 0.8;
             cv::Point position = findEyeCenter(eye, mask, &confidence);
@@ -270,20 +271,22 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
             //Kalman filter eye center for light smoothing
             cv::Point filteredPos = filter.filterPosition(position, confidence);
 
-            //Draw position trail
-            frame = frame_gray;
-            cvtColor(frame, frame, CV_GRAY2RGB);
-            converted =true;
+            if (cv::norm(filteredPos - lens_center) <lens_radius ){
+                //Draw position trail
+                frame = frame_gray;
+                cvtColor(frame, frame, CV_GRAY2RGB);
+                converted = true;
 
-            circle(frame, filteredPos, 4, 1234);
-            std::vector<cv::Point>::iterator it;
-            it = point_history.begin();
-            point_history.insert(it, filteredPos);
-            if (point_history.size() > 10) {
-                point_history.pop_back();
+                circle(frame, filteredPos, 4, 1234);
+                std::vector<cv::Point>::iterator it;
+                it = point_history.begin();
+                point_history.insert(it, filteredPos);
+                if (point_history.size() > 10) {
+                    point_history.pop_back();
+                }
             }
 
-            int movementThreshold = 20;
+            int movementThreshold = 15;
             cv::Scalar color(0, 0, 255, 0.5); //
             for (int i = 0; i < point_history.size() - 1; ++i) {
                 cv::Point diff = point_history[i] - point_history[i + 1];
