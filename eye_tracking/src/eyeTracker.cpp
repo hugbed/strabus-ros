@@ -24,6 +24,8 @@ EyeTracker::EyeTracker()
     // Subscribe to input video feed and publish output video feed
     image_sub_ = it_.subscribe("camera/image", 1,
                                &EyeTracker::frameCallback, this);
+    /*image_sub_ = it_.subscribe("usb_cam/image_raw", 1,
+                               &EyeTracker::frameCallback, this);*/
     image_pub_ = it_.advertise("tracking/image", 1);
     maskCreated = false;
     overlayCounter = 0;
@@ -154,7 +156,7 @@ void EyeTracker::calibrateCenter(cv::Mat frame){
     vector<Vec3f> circles;
 
     /// Apply the Hough Transform to find the circles
-    HoughCircles( frame_gray, circles, CV_HOUGH_GRADIENT, 1, frame_gray.rows/8, 150, 50, 0, 0 );
+    HoughCircles( frame_gray, circles, CV_HOUGH_GRADIENT, 1, frame_gray.rows/8, 100, 50, 0, 0 );
 
     double pixel_min, pixel_max;
     minMaxLoc(frame_gray,&pixel_min, &pixel_max);
@@ -198,13 +200,13 @@ void EyeTracker::calibrateCenter(cv::Mat frame){
         calibrate_center_on_next_frame = false;
     }
 
-   // imshow( "Hough Circle Transform Demo", frame_gray );
+   //imshow( "Hough Circle Transform Demo", frame_gray );
 
 }
 
 void EyeTracker::initLensCenter(cv::Mat frame){
     lens_center = cv::Point(frame.cols/2, frame.rows/2);
-    lens_radius = frame.cols/6;
+    lens_radius = frame.cols/4;
 }
 
 void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
