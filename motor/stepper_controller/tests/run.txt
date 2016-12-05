@@ -1,1 +1,1 @@
-"{\"command\":\"run\",\"parameters\":{\"direction\":\"counter-clockwise\",\"speed\":200.0}}"
+"{\"command\":\"run\",\"parameters\":{\"direction\":\"OPEN\",\"speed\":200.0}}"

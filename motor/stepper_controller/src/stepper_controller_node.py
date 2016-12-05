@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
     rospy.spin()
 
-    print "Status: %s" % (bin(_controller.status()))
+    print "Status: %s" % (bin(_controller.getStatus()))
 
     _controller.close()
     GPIO.output(24, 0)
