@@ -446,8 +446,8 @@ class L6470(object):
 
         # Convert from step/s to step/tick
         SpeedTick = self.speedToStepTick(Speed)
-                
-        self.sendCmd3(self.CMD_GOUNTIL | Action | Direction, SpeedTick)
+
+        self.sendCmd3(self.CMD_GOUNTIL | (Action << 3) | Direction, SpeedTick)
 
     # ReleaseSW command
     # Move the stepper at minimum speed in the given direction until a rising edge is detected
@@ -462,8 +462,8 @@ class L6470(object):
         if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
             print "L6470.releaseSW: Invalid direction %d" % (Direction)
             return
-                
-        self.sendCmd(self.CMD_RELEASESW | Action | Direction)
+
+        self.sendCmd(self.CMD_RELEASESW | (Action << 3) | Direction)
 
     # GoHome command
     # Equivalent to GoTo(0), but  with 3 bytes less to send.

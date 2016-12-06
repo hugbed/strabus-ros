@@ -1,1 +1,1 @@
-"{\"command\":\"moveBy\",\"parameters\":{\"distance\":5000.0,\"direction\":\"CLOSE\"}}"
+"{\"command\":\"moveBy\",\"parameters\":{\"distance\":5000.0,\"direction\":\"OPEN\"}}"
