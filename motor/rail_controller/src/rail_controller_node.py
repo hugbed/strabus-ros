@@ -4,6 +4,8 @@
 import rospy
 
 # Standard messages.
+from std_msgs.msg import Empty
+from std_msgs.msg import Float32
 from std_msgs.msg import String
 
 # Controller library.
@@ -100,15 +102,14 @@ STEPS_PER_MICROMETER = STEPS_PER_TURN / DISTANCE_PER_TURN
 DISTANCE_OFFSET = 104000
 
 # =================================================================================================
-# Commands
+# Callbacks
 # =================================================================================================
 # Callback used to translate the received JSON message to a rail command.
 # Expecting something like this (example for the move command):
 # {
 #    "command" : "move",
 #    "parameters" : {
-#        "direction" : "open",
-#        "speed" : 800.0
+#        "direction" : "OPEN"
 #    }
 #}
 def messageCallback(message):
@@ -134,6 +135,9 @@ def messageCallback(message):
     except ValueError as e:
         rospy.logerr(rospy.get_caller_id() + ": Error decoding JSON \"%s\"" % (str(e)))
 
+# =================================================================================================
+# Commands
+# =================================================================================================
 # Calibrate command
 # Perform a system calibration from one limit switch to the other.
 # The system is frozen to commands during that time.
@@ -335,6 +339,10 @@ if __name__ == '__main__':
     # Initialize ROS node.
     rospy.init_node("rail_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
+    
+    # Define shortcut topics.
+    rospy.Subscriber("motor/inter_eye/calibrate", Empty, calibrateCommand)
+    rospy.Subscriber("motor/inter_eye/moveTo", Float32, moveToCommand)
 
     print "Rail controller node successfully launched!"
 
@@ -342,5 +350,6 @@ if __name__ == '__main__':
 
     print "Status: %s" % (bin(_controller.status()))
 
+    _controller.hardDisengage()
     GPIO.output(24, 0)
     _controller.close()
