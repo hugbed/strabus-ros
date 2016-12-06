@@ -1,3 +1,5 @@
 # Motor controllers
 
-Stepper motor control and dynamixel control.
+ * Inter-pupillary rail controller
+ * Stepper controller
+ * Dynamixel controller

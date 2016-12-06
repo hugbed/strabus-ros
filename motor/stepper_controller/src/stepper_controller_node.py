@@ -55,29 +55,29 @@ def messageCallback(message):
 # Run the stepper in the given direction and at the given speed.
 # The stepper will run until a stop command is issued or until a limit switch is hit.
 def runCommand(direction, speed):
-    if (direction == "clockwise" or direction == "counter-clockwise"):
-        rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s rotation" % (speed, direction))
+    if (direction == "OPEN" or direction == "CLOSE"):
+        rospy.loginfo(rospy.get_caller_id() + ": Run at %d step/s in %s direction" % (speed, direction))
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized run direction for \"%s\"" % (direction))
 
     # Run the stepper if the direction is appropriate.
-    if (direction == "clockwise"):
-        _controller.run(L6470.DIR_CLOCKWISE, speed)
-    elif (direction == "counter-clockwise"):
-        _controller.run(L6470.DIR_COUNTER_CLOCKWISE, speed)
+    if (direction == "OPEN"):
+        _controller.run(L6470.DIR_REVERSE, speed)
+    elif (direction == "CLOSE"):
+        _controller.run(L6470.DIR_FORWARD, speed)
 
 # Move the stepper by the given number of microsteps.
 def moveCommand(direction, steps):
     if (direction == "clockwise" or direction == "counter-clockwise"):
-        rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s rotation" % (steps, direction))
+        rospy.loginfo(rospy.get_caller_id() + ": Move by %d steps in %s direction" % (steps, direction))
     else:
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized move direction for \"%s\"" % (direction))
 
     # Issue a Move command to the stepper if the direction is appropriate.
-    if (direction == "clockwise"):
-        _controller.move(L6470.DIR_CLOCKWISE, steps)
-    elif (direction == "counter-clockwise"):
-        _controller.move(L6470.DIR_COUNTER_CLOCKWISE, steps)
+    if (direction == "OPEN"):
+        _controller.move(L6470.DIR_REVERSE, steps)
+    elif (direction == "CLOSE"):
+        _controller.move(L6470.DIR_FORWARD, steps)
 
 # Move the stepper to the given position.
 def goToCommand(position):
@@ -130,7 +130,9 @@ if __name__ == '__main__':
 
     # Initialize ROS node.
     rospy.init_node("stepper_controller_node", anonymous=True)
-    rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
+    rospy.Subscriber("motor/stepper/command", String, messageCallback)
+
+    print "Stepper controller node successfully launched!"
 
     print "Stepper controller node successfully launched!"
 
