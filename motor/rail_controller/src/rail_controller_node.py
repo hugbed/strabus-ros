@@ -121,7 +121,7 @@ def messageCallback(message):
         command = data.get('command', None)
         parameters = data['parameters']
         if command == "calibrate":
-            calibrateCommand(None)
+            calibrateCommand()
         elif command == "move":
             moveCommand(parameters['direction'])
         elif command == "moveBy":
