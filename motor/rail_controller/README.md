@@ -21,6 +21,16 @@ roslaunch rail_controller rail_controller.launch
 ### Messages format
 The messages are encoded in JSON. Each message represents a command to run on the rail controller.
 
+#### Calibrate command
+Perform a calibration of the rail system. Note that no other command will be accepted while the
+rail is performing a calibration.
+
+```
+{
+    "command" : "calibrate"
+}
+```
+
 #### Move command
 Move the rail in the given direction until a stop command is issued or the rail arrives to a limit.
 
