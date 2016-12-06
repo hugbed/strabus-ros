@@ -3,7 +3,7 @@
 
 
 // Algorithm Parameters
-const int FAST_EYE_WIDTH = 60;
+const int FAST_EYE_WIDTH = 40;
 const int WEIGHT_BLUR_SIZE = 5;
 const bool ENABLE_WEIGHT = true;
 const float WEIGHT_DIVISOR = 1.0;
