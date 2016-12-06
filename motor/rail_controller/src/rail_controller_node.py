@@ -45,7 +45,6 @@ def flagCallback(channel):
             print "Waiting for home release..."
             while ((_controller.getStatus() & L6470.STATUS_SW_F) != 0):
                 # Wait a bit and look again if the switch is released.
-                print "%s" % (bin(_controller.getStatus()))
                 sleep(0.2)
 
             print "Release done!"
@@ -57,7 +56,6 @@ def flagCallback(channel):
             print "Waiting for mark release..."
             while ((_controller.getStatus() & L6470.STATUS_SW_F) != 0):
                 # Wait a bit and look again if the switch is released.
-                print "%s" % (bin(_controller.getStatus()))
                 sleep(0.2)
 
             print "Release done!"
@@ -65,7 +63,7 @@ def flagCallback(channel):
 
         _flags._releasing = False
 
-    print "End status: %s" % (bin(_controller.status()))
+    print ("End of interrupt: %s" % (bin(_controller.status())))
 
 # Interrupt script execution when a falling edge occurs on input 23. 
 GPIO.add_event_detect(23, GPIO.FALLING, callback=flagCallback)
@@ -96,8 +94,10 @@ MICROSTEPS_PER_MICROMETER = MICROSTEPS_PER_TURN / DISTANCE_PER_TURN
 # The number of full steps in each micrometer of inter-pupillary distance traveled.
 STEPS_PER_MICROMETER = STEPS_PER_TURN / DISTANCE_PER_TURN
 
-# The inter-pupillary distance when the rail is at microstep position 0.
-DISTANCE_OFFSET = 0
+# The inter-pupillary distance when the rail is at microstep position 0 (home position).
+# The home position is when the rail is completely opened. The step scale and the
+# distance scale are in opposite directions.
+DISTANCE_OFFSET = 104000
 
 # =================================================================================================
 # Commands
@@ -146,13 +146,13 @@ def calibrateCommand():
 
     # Start calibration to home position.
     print "Setting home..."
-    _controller.run(L6470.DIR_REVERSE, 200)
+    _controller.run(L6470.DIR_REVERSE, 300)
     while (not _flags._homeSet):
         # Wait a bit and look again if home was set.
         sleep(0.1)
 
     print "Setting mark..."
-    _controller.run(L6470.DIR_FORWARD, 200)
+    _controller.run(L6470.DIR_FORWARD, 300)
     while (not _flags._markSet):
         # Wait a bit and look again if the controller is busy.
         sleep(0.1)
@@ -245,20 +245,21 @@ def moveToCommand(targetPos):
         rospy.logwarn(rospy.get_caller_id() + ": The system is not calibrated: ignoring command.")
         return
 
+    # Convert position to microstep position.
     curStep = _controller.currentPosition()
-    curPos = (curStep * DISTANCE_PER_MICROSTEP) + DISTANCE_OFFSET
-    targetStep = round((targetPos - curPos - DISTANCE_OFFSET) * MICROSTEPS_PER_MICROMETER)
+    targetStep = (DISTANCE_OFFSET - targetPos) * MICROSTEPS_PER_MICROMETER
     delta = targetStep - curStep
 
+    # Determine log message and direction according to delta.
     if (delta < 0):
-        rospy.loginfo(rospy.get_caller_id() + ": Opening the rail to %d micrometers" % (position))
+        rospy.loginfo(rospy.get_caller_id() + ": Opening the rail to %d micrometers" % (targetPos))
 
         if (targetStep < 0):
             _controller.goHome()
         else:
             _controller.goToDir(L6470.DIR_REVERSE, targetStep)
     elif (delta > 0):
-        rospy.loginfo(rospy.get_caller_id() + ": Closing the rail to %d micrometers" % (position))
+        rospy.loginfo(rospy.get_caller_id() + ": Closing the rail to %d micrometers" % (targetPos))
 
         if (targetStep > _controller.getMark()):
             _controller.goMark()
@@ -301,11 +302,11 @@ class Flags(object):
 # =================================================================================================
 if __name__ == '__main__':
     print "Preparing to launch Inter-pupillary rail controller node..."
-    
+
     # Open the SPI stepper controller.
     _controller = L6470()
     _controller.open(0, 0)
-    
+
     # Enable reset pin.
     GPIO.output(24, 1)
 
@@ -323,8 +324,8 @@ if __name__ == '__main__':
     _controller.setKvalRun(45)
     _controller.setKvalAcc(45)
     _controller.setKvalDec(45)
-    _controller.setMinSpeed(199, False)
-    _controller.setMaxSpeed(200)
+    _controller.setMinSpeed(50, False)
+    _controller.setMaxSpeed(300)
 
     # State flags
     _flags = Flags()

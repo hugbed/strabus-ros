@@ -410,20 +410,20 @@ class L6470(object):
     def goTo(self, Position):
         # Limit posiition to a 22 bits number
         Position = min(Position, 0x003FFFFF)
-        
+
         self.sendCmd3(self.CMD_GOTO, int(Position))
 
     # GoToDir command
     # Same ad GoTo, but with a forced rotation direction, which depending on that direction might 
     # not result in the shortest path.
     def goToDir(self, Direction, Position):
-        if Direction != self.DIR_FORWARD or Direction != self.DIR_REVERSE:
+        if Direction != self.DIR_FORWARD and Direction != self.DIR_REVERSE:
             print "L6470.goToDir: Invalid direction %d" % (Direction)
             return
 
         # Limit position to a 22 bits number
         Position = min(Position, 0x003FFFFF)
-        
+
         self.sendCmd3(self.CMD_GOTODIR | Direction, int(Position))
 
     # GoUntil command
