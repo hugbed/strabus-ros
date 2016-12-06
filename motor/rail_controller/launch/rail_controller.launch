@@ -1,0 +1,3 @@
+<launch>
+	<node name="rail_controller" pkg="rail_controller" type="rail_controller_node" />
+</launch>

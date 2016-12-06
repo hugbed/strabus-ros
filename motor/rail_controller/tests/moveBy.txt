@@ -1,0 +1,1 @@
+"{\"command\":\"moveBy\",\"parameters\":{\"distance\":30000.0,\"direction\":\"OPEN\"}}"
