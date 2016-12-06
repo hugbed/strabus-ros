@@ -14,6 +14,9 @@ from L6470_pkg.L6470_lib import L6470
 # Sleeping tool
 from time import sleep
 
+# Threading
+import threading
+
 # JSON tool
 import json
 
@@ -71,7 +74,7 @@ def flagCallback(channel):
 GPIO.add_event_detect(23, GPIO.FALLING, callback=flagCallback)
 
 # =================================================================================================
-# Conversion constants
+# Conversion constants and util functions.
 # =================================================================================================
 # The number of full steps for each rotation of the stepper.
 STEPS_PER_TURN = 200
@@ -100,6 +103,16 @@ STEPS_PER_MICROMETER = STEPS_PER_TURN / DISTANCE_PER_TURN
 # The home position is when the rail is completely opened. The step scale and the
 # distance scale are in opposite directions.
 DISTANCE_OFFSET = 104000
+
+# Obtain the microstep position (relative to the HOME position) corresponding to the 
+# given inter-pupillary rail position.
+def railPosToStepPos(railPos):
+    return (DISTANCE_OFFSET - railPos) * MICROSTEPS_PER_MICROMETER
+
+# Obtain the inter-pupillary rail position corresponding to the given microstep 
+# position (relative to the HOME position).
+def stepPosToRailPos(stepPos):
+    return DISTANCE_OFFSET - stepPos * DISTANCE_PER_MICROSTEP
 
 # =================================================================================================
 # Callbacks
@@ -251,7 +264,7 @@ def moveToCommand(targetPos):
 
     # Convert position to microstep position.
     curStep = _controller.currentPosition()
-    targetStep = (DISTANCE_OFFSET - targetPos) * MICROSTEPS_PER_MICROMETER
+    targetStep = railPosToStepPos(targetPos)
     delta = targetStep - curStep
 
     # Determine log message and direction according to delta.
@@ -302,6 +315,23 @@ class Flags(object):
         self._releasing = False
 
 # =================================================================================================
+# Thread for monitoring rail position.
+# =================================================================================================
+# Monitoring function used to publish the inter-pupillary distance of the rail 
+# (in micrometers) periodically.
+def monitorPosition():
+    r = rospy.Rate(10) # 10 Hz
+    while (not rospy.is_shutdown()):
+        if (_flags._homeSet and _flags._markSet):
+            _feedbackPub.publish(stepPosToRailPos(_controller.currentPosition()))
+
+        r.sleep()
+
+# Setup monitoring thread.
+_feedbackThread = threading.Thread(target=monitorPosition)
+_feedbackThread.daemon = True
+
+# =================================================================================================
 # Main node function
 # =================================================================================================
 if __name__ == '__main__':
@@ -339,6 +369,7 @@ if __name__ == '__main__':
     # Initialize ROS node.
     rospy.init_node("rail_controller_node", anonymous=True)
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
+    _feedbackPub = rospy.Publisher("/motor/inter_eye/position", Float32, queue_size=10)
     
     # Define shortcut topics.
     rospy.Subscriber("motor/inter_eye/calibrate", Empty, calibrateCommand)
@@ -346,6 +377,7 @@ if __name__ == '__main__':
 
     print "Rail controller node successfully launched!"
 
+    _feedbackThread.start()
     rospy.spin()
 
     print "Status: %s" % (bin(_controller.status()))
