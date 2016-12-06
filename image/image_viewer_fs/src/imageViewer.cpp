@@ -18,8 +18,8 @@ const uint HEIGHT = 240;
 float g_scale = 1.0f;
 float g_angle = 90.0f;
 float g_showImage = true;
-std::string g_filename = "";
-std::string g_imageDirectory = "/home/jon/Projects/Strabus/UI/app/img/";
+std::string g_filename = "slides/fusion/circle_square/left.png";
+std::string g_imageDirectory = "/home/pi/Projects/Strabus/UI/app/img/";
 
 std::map<std::string, cv::Mat> g_images;
 std::mutex g_mapMutex; // write: unique access, read: shared access
