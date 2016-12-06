@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 "{\"command\":\"move\",\"parameters\":{\"direction\":\"OPEN\",\"steps\":100000}}"
+=======
+"{\"command\":\"move\",\"parameters\":{\"direction\":\"counter-clockwise\",\"steps\":25600}}"
+>>>>>>> master

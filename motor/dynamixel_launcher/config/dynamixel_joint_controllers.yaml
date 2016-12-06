@@ -5,7 +5,7 @@ horizontal_controller:
         type: JointPositionController
     joint_name: horizontal_joint
     joint_speed: 0.3
-    joint_compliance_slope: 25
+    joint_compliance_slope: 128
     joint_compliance_margin: 0
     motor:
         id: 2
@@ -20,7 +20,7 @@ vertical_controller:
         type: JointPositionController
     joint_name: vertical_joint
     joint_speed: 0.3
-    joint_compliance_slope: 25
+    joint_compliance_slope: 128
     joint_compliance_margin: 0
     motor:
         id: 1
