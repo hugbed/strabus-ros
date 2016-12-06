@@ -110,8 +110,7 @@ void testPossibleCentersFormula(int x, int y, const cv::Mat &weight,double gx, d
 void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
     int sum = 0;
     int count = 0;
-    uint8_t maxVal = 0;
-    uint8_t minVal = 255;
+
     for (int y = 0; y < eyeROI.rows; ++y) {
         uint8_t *eyeRow = eyeROI.ptr<uint8_t>(y);
         uint8_t *maskRow = mask.ptr<uint8_t>(y);
@@ -121,11 +120,9 @@ void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
             }
             count++;
             sum = sum + eyeRow[x];
-            maxVal = std::max(maxVal, eyeRow[x]);
-            minVal = std::min(minVal, eyeRow[x]);
         }
     }
-    int averageBrightness = sum/(float)count;
+    int averageBrightness = sum/(float)(count+1);
 
     for (int y = 0; y < eyeROI.rows; ++y) {
         uint8_t *eyeRow = eyeROI.ptr<uint8_t>(y);
@@ -139,8 +136,6 @@ void equalizeForTube(cv::Mat eyeROI, cv::Mat mask){
         }
     }
     equalizeHist(eyeROI, eyeROI);
-
-
 }
 
 cv::Point findEyeCenter(cv::Mat eyeROI, cv::Mat mask, float* confidence) {

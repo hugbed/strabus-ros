@@ -1,7 +1,7 @@
 <launch>
 	<arg name="side"/>
 	<group ns="/$(arg side)">
-		<node name="tracking" pkg="eye_tracking" type="eye_tracking_node" args="_image_transport:=compressed" output="screen"/>
+		<node name="tracking" pkg="eye_tracking" type="eye_tracking_node" args="_image_transport:=compressed" output="screen" respawn="true"/>
 
 	</group>
 </launch>

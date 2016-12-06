@@ -123,16 +123,6 @@ void EyeTracker::drawOverlay(cv::Mat frame, cv::Point offset){
     cv::line(frame, cv::Point(lens_center.x,0), cv::Point(lens_center.x,frame.rows), color, 1);
     cv::line(frame, cv::Point(0,lens_center.y), cv::Point(frame.cols,lens_center.y), color, 1);
     circle( frame, lens_center, lens_radius, color, 1, 8, 0 );
-
-    /*
-    int w_step = frame.cols/10;
-    for (int h = h_step/2; h<frame.rows; h+=h_step){
-      cv::line(frame, cv::Point(lens_center.x - 5,h), cv::Point(lens_center.x +5,h),color_green,1);
-    }
-    for (int w = w_step/2; w<frame.cols; w+=w_step){
-      cv::line(frame, cv::Point(w, lens_center.y - 5), cv::Point(w, lens_center.y +5),color_green,1);
-    }*/
-
 }
 
 void EyeTracker::createMask(cv::Mat eyeROI, cv::Mat eyeFull, cv::Point lens_center, int lens_radius, cv::Rect eyeRect){
@@ -167,7 +157,6 @@ void EyeTracker::calibrateCenter(cv::Mat frame_gray){
 
     for( size_t i = 0; i < circles.size(); i++ )
     {
-
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
         int radius = cvRound(circles[i][2]);
         // circle center
@@ -210,6 +199,22 @@ void EyeTracker::initLensCenter(cv::Mat frame){
     lens_radius = frame.cols/4;
 }
 
+cv::Mat copyFrameROI(cv::Mat src, int width, int height, cv::Point center){
+    if (src.cols <width || src.rows <height ){
+        return src;
+    }
+    int x = std::max(center.x - width/2, 0);
+    int y = std::max(center.y - height/2, 0);
+
+    if (center.x + width/2 > src.cols){
+        x = src.cols - width/2;
+    }
+    if (center.y + height/2 > src.rows){
+        y = src.rows - height/2;
+    }
+    return src(cv::Rect(x,y, width, height));
+}
+
 void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv_bridge::CvImagePtr cv_ptr;
 
@@ -230,14 +235,11 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
     if (!cv_ptr->image.empty()) {
 
         cv::Mat frame = cv_ptr->image;
-        rotateImage90(frame, clockwiseRotation);
-        //cv::flip(frame, frame, 1);
         cv::Rect eyeRect(0, 0, frame.cols, frame.rows);
         std::vector <cv::Mat> rgbChannels(3);
         cv::Mat frame_gray = rgbChannels[2];
         cv::split(frame, rgbChannels);
         cvtColor(frame, frame_gray, CV_BGR2GRAY);
-        //equalizeHist(frame_gray, frame_gray);
 
         if (!filter.isInit()){
             filter.initialize(frame);
@@ -256,12 +258,10 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
         }
         //imshow( "mask", mask_fullsize );
 
-
         bool converted = false;
         if (tracking_active) {
             cv::Mat eye;
             scaleToFastSize(frame_gray, eye);
-
 
             //Get the eye center using gradient algorithm
             float confidence = 0.8;
@@ -287,7 +287,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
             }
 
             int movementThreshold = 15;
-            cv::Scalar color(0, 0, 255, 0.5); //
+            cv::Scalar color(0, 0, 255, 0.5);
             for (int i = 0; i < point_history.size() - 1; ++i) {
                 cv::Point diff = point_history[i] - point_history[i + 1];
                 int difference = std::sqrt(diff.dot(diff));
@@ -307,9 +307,10 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
         // Draw GUI on frame
         cv::Point offset;
         drawOverlay(frame, offset);
-
+        cv::Mat out = copyFrameROI(frame,200,200, lens_center);
+        rotateImage90(out, clockwiseRotation);
         //Publish frame
-        cv_ptr->image = frame;
+        cv_ptr->image = out;
         //cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         image_pub_.publish(cv_ptr->toImageMsg());
 
