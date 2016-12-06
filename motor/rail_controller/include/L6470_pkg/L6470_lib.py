@@ -608,7 +608,7 @@ class L6470(object):
         if Optimized == True:
             MinSpeed += 0x1000
         
-        self.setParam(self.REG_MIN_SPEED, self.maxMinspeedToStepTick(MinSpeed), 2)
+        self.setParam(self.REG_MIN_SPEED, self.minSpeedToStepTick(MinSpeed), 2)
 
     # SetMaxSpeed command
     # Set a new maximum speed for the stepper, in step/s.
@@ -618,7 +618,7 @@ class L6470(object):
         
         MaxSpeed = min(MaxSpeed, 15625)
         
-        self.setParam(self.REG_MAX_SPEED, self.maxMinspeedToStepTick(MaxSpeed), 2)
+        self.setParam(self.REG_MAX_SPEED, self.maxSpeedToStepTick(MaxSpeed), 2)
 
     # SetThresholdSpeed command
     # Set a new threshold speed for the stepper, in step/s.
@@ -631,7 +631,8 @@ class L6470(object):
         # Limit value to 10 bits.
         ThresholdSpeed = min(ThresholdSpeed, 15625)
 
-        self.setParam(self.REG_FS_SPD, self.maxMinspeedToStepTick(ThresholdSpeed), 2)
+        # Same encoding as MAX_SPEED.
+        self.setParam(self.REG_FS_SPD, self.maxSpeedToStepTick(ThresholdSpeed - 0.5), 2)
 
 
     # SetKvals
