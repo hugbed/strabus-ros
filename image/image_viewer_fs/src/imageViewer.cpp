@@ -37,6 +37,7 @@ void angleCallback(const std_msgs::Float32::ConstPtr& msg);
 void filenameCallback(const std_msgs::String::ConstPtr& msg);
 void scaleCallback(const std_msgs::Float32::ConstPtr& msg);
 void imageShowCallback(const std_msgs::Bool::ConstPtr& msg);
+void drawThisARGBStuffOnWhiteBackground(cv::Mat &out);
 
 bool imageIsLoaded(std::string filename)
 {
@@ -44,16 +45,48 @@ bool imageIsLoaded(std::string filename)
     return g_images.end() != g_images.find(filename);
 }
 
+void drawThisARGBStuffOnWhiteBackground(cv::Mat &target, cv::Mat &matWithSomeWhite)
+{
+    // put some white
+    matWithSomeWhite = cv::Mat::zeros(target.rows, target.cols, CV_8UC3);
+    matWithSomeWhite.setTo(cv::Scalar(255,255,255)); // white background
+
+    cv::Mat targetBGR(target.rows, target.cols, CV_8UC3);   // create BGR mat
+    cv::Mat targetAlpha(target.rows, target.cols, CV_8UC1); // create alpha mat
+    cv::Mat out[] = { targetBGR, targetAlpha };             // create array of matrices
+    int from_to[] = { 0,0, 1,1, 2,2, 3,3 };                 // create array of index pairs
+    cv::mixChannels(&target, 1, out, 2, from_to, 4);
+
+    // copy pixels that have no alpha
+    for (int i = 0; i < targetAlpha.rows; ++i) {
+        for (int j = 0; j < targetAlpha.cols; ++j) {
+            if (targetAlpha.at<uint8_t>(j, i) > 0) {
+                matWithSomeWhite.at<cv::Vec3b>(j,i) = targetBGR.at<cv::Vec3b>(j,i);
+            }
+        }
+    }
+}
+
+
 bool loadImage(std::string filename, cv::Mat &out)
 {
     ROS_INFO("Loading image, %s", (g_imageDirectory + g_filename).c_str());
 
     // load image if it's not already loaded
     if (!imageIsLoaded(filename)) {
-        out = cv::imread(g_imageDirectory + g_filename, CV_LOAD_IMAGE_COLOR);
+        cv::Mat target = cv::imread(g_imageDirectory + g_filename, CV_LOAD_IMAGE_UNCHANGED);
 
         // insert in dict if loading succeeds
-        if (out.data){
+        if (target.data){
+            if (target.channels() == 4) {
+                drawThisARGBStuffOnWhiteBackground(target, out);
+            } else {
+                out = target;
+            }
+
+            // horizontal flip to overcome mirror issues
+            cv::flip(out, out, 1);
+
             std::lock_guard<std::mutex> lock(g_mapMutex);
             g_images.insert(std::pair<std::string, cv::Mat>(g_filename, out));
             return true;
