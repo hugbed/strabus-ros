@@ -19,9 +19,13 @@ class L6470(object):
     # step/tick = STEP_SPEED_RATIO * step/s
     STEP_SPEED_RATIO = 67.108864
     
-    # Ratio value used to convert a max or min speed from step/s to step/tick.
-    # step/tick = MAXMIN_STEP_SPEED_RATIO * step/s
-    MAXMIN_STEP_SPEED_RATIO = 0.065536
+    # Ratio value used to convert a MAX speed from step/s to step/tick.
+    # step/tick = MAX_STEP_SPEED_RATIO * step/s
+    MAX_STEP_SPEED_RATIO = 0.065536
+    
+    # Ratio value used to convert a MIN speed from step/s to step/tick.
+    # step/tick = MIN_STEP_SPEED_RATIO * step/s
+    MIN_STEP_SPEED_RATIO = 4.194304
     
     # ==============================================================================================
     # Command actions and parameters
@@ -282,23 +286,44 @@ class L6470(object):
         # Limit speed to a 20 bits number
         return min(StepTick, 0x000FFFFF)
 
-    # Convert a max or min speed from step/tick to step/s.
-    # Max or min speed registers use a different encoding than the stepper speed register.
-    def maxMinspeedToStepSec(self, StepTick):
+    # Convert a MAX speed from step/tick to step/s.
+    # Max speed registers use a different encoding than the stepper speed register.
+    def maxSpeedToStepSec(self, StepTick):
         # Controller gives a speed in step/tick formatted in unsigned fixed point 0.18.
         # Equation: StepSec = (StepTick * 2^-18)/TICK
-        # Equivalent to: StepTick / 0.065536
-        StepSec = StepTick / self.MAXMIN_STEP_SPEED_RATIO
+        # Equivalent to: StepTick / MAX_STEP_SPEED_RATIO
+        StepSec = StepTick / self.MAX_STEP_SPEED_RATIO
         
         return StepSec
 
-    # Convert a max or min speed from step/s to step/tick.
-    # Max or min speed registers use a different encoding than the stepper speed register.
-    def maxMinspeedToStepTick(self, StepSec):
+    # Convert a MAX speed from step/s to step/tick.
+    # Max speed registers use a different encoding than the stepper speed register.
+    def maxSpeedToStepTick(self, StepSec):
         # Controller expects speed in step/tick formatted in unsigned fixed point 0.18.
         # Equation: StepTick = (StepSec * TICK)/(2^-18)
-        # Equivalent to: StepSec * 0.065536
-        StepTick = StepSec * self.MAXMIN_STEP_SPEED_RATIO
+        # Equivalent to: StepSec * MAX_STEP_SPEED_RATIO
+        StepTick = StepSec * self.MAX_STEP_SPEED_RATIO
+        
+        # Limit speed to a 20 bits number
+        return min(int(round(StepTick)), 0x000FFFFF)
+    
+    # Convert a MIN speed from step/tick to step/s.
+    # Min speed registers use a different encoding than the stepper speed register.
+    def minSpeedToStepSec(self, StepTick):
+        # Controller gives a speed in step/tick formatted in unsigned fixed point 0.24.
+        # Equation: StepSec = (StepTick * 2^-24)/TICK
+        # Equivalent to: StepTick / MIN_STEP_SPEED_RATIO
+        StepSec = StepTick / self.MIN_STEP_SPEED_RATIO
+        
+        return StepSec
+
+    # Convert a MIN speed from step/s to step/tick.
+    # Min speed registers use a different encoding than the stepper speed register.
+    def minSpeedToStepTick(self, StepSec):
+        # Controller expects speed in step/tick formatted in unsigned fixed point 0.24.
+        # Equation: StepTick = (StepSec * TICK)/(2^-24)
+        # Equivalent to: StepSec * MIN_STEP_SPEED_RATIO
+        StepTick = StepSec * self.MIN_STEP_SPEED_RATIO
         
         # Limit speed to a 20 bits number
         return min(int(round(StepTick)), 0x000FFFFF)
