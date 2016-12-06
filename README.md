@@ -1,6 +1,7 @@
 # Strabus ROS nodes.
 
-* Dynamixel control
-* Stepper control
+* Dynamixel controller
+* Inter-pupillary rail controller
+* Stepper controller
 * Image viewer
 * Eye tracking
