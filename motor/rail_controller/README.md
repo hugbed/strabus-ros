@@ -47,7 +47,8 @@ Move the rail by the given amount of distance, in micrometers.
 {
     "command" : "moveBy",
     "parameters" : {
-        "distance" : 4500.0
+        "distance" : 4500.0,
+        "direction" : "CLOSE"
     }
 }
 ```
