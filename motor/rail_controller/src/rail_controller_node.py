@@ -35,32 +35,34 @@ def flagCallback(channel):
     status = _controller.getStatus()
     print "Interrupt: %s" % (bin(status))
     if (status & L6470.STATUS_SW_EVN):
-	print "Switch turn on event"
-        _releasing = True
+	    print "Switch turn on event"
+        _flags._releasing = True
         direction = (status & L6470.STATUS_DIR) >> L6470.STATUS_DIR_SHIFT
 
-        # Reverse previous direction.
         if (direction == L6470.DIR_REVERSE):
-            direction = L6470.DIR_FORWARD
-
-            # Opening limit switch was hit: set position as home.
-            action = L6470.ACT_RESET
+            # Opening limit switch was hit: reverse direction and set position as home.
+            _controller.releaseSW(L6470.ACT_RESET, L6470.DIR_FORWARD)
+            print "Waiting for home release..."
+            while ((_controller.getStatus() & L6470.STATUS_SW_F) != 0):
+                # Wait a bit and look again if the switch is released.
+                sleep(0.1)
+    
+            print "Release done!"
+            
             _flags._homeSet = True
         elif (direction == L6470.DIR_FORWARD):
-            direction = L6470.DIR_REVERSE
-
-            # Closing limit switch was hit: set position as mark.
-            action = L6470.ACT_COPY
+            # Closing limit switch was hit: reverse direction and set position as mark.
+            _controller.releaseSW(L6470.ACT_COPY, L6470.DIR_REVERSE)
+            print "Waiting for mark release..."
+            while ((_controller.getStatus() & L6470.STATUS_SW_F) != 0):
+                # Wait a bit and look again if the switch is released.
+                sleep(0.1)
+    
+            print "Release done!"
+            _releasing = False
             _flags._markSet = True
-
-        _controller.releaseSW(action, direction)
-        print "Waiting for release..."
-        while ((_controller.getStatus() & L6470.STATUS_BUSY) != 0):
-            # Wait a bit and look again if the controller is busy.
-            sleep(0.1)
-
-        print "Release done!"
-        _releasing = False
+            
+        _flags._releasing = False
 
 # Interrupt script execution when a falling edge occurs on input 23. 
 GPIO.add_event_detect(23, GPIO.FALLING, callback=flagCallback)
@@ -137,22 +139,22 @@ def calibrateCommand():
 
     _flags._homeSet = False
     _flags._markSet = False
-    _calibrating = True
+    _flags._calibrating = True
 
     # Start calibration to home position.
     print "Setting home..."
     _controller.run(L6470.DIR_REVERSE, 200)
-    while (_flags._homeSet == False):
+    while (not _flags._homeSet):
         # Wait a bit and look again if home was set.
         sleep(0.1)
 
     print "Setting mark..."
     _controller.run(L6470.DIR_FORWARD, 200)
-    while (_flags._markSet == False):
+    while (not _flags._markSet):
         # Wait a bit and look again if the controller is busy.
         sleep(0.1)
 
-    _calibrating = False
+    _flags._calibrating = False
     rospy.loginfo(rospy.get_caller_id() + ": Calibration DONE!")
 
 # Move command
@@ -162,7 +164,7 @@ def calibrateCommand():
 # direction : the direction of the movement
 def moveCommand(direction):
     # Ignore the command if releasing from switch or calibrating.
-    if (_releasing or _calibrating):
+    if (_flags._releasing or _flags._calibrating):
         return
     
     # This command must run on a calibrated system.
@@ -189,7 +191,7 @@ def moveCommand(direction):
 # direction : the direction of the movement
 def moveByCommand(distance, direction):
     # Ignore the command if releasing from switch or calibrating.
-    if (_releasing or _calibrating):
+    if (_flags._releasing or _flags._calibrating):
         return
     
     # This command must run on a calibrated system.
@@ -229,7 +231,7 @@ def moveByCommand(distance, direction):
 # targetPos: the position to move the rail to, in micrometers
 def moveToCommand(targetPos):
     # Ignore the command if releasing from switch or calibrating.
-    if (_releasing or _calibrating):
+    if (_flags._releasing or _flags._calibrating):
         return
     
     # This command must run on a calibrated system.
@@ -237,7 +239,6 @@ def moveToCommand(targetPos):
         rospy.logwarn(rospy.get_caller_id() + ": The system is not calibrated: ignoring command.")
         return
     
-    # TODO: Limit position to calibrated rail inter-pupillary limits.
     curStep = _controller.currentPosition()
     curPos = (curStep * DISTANCE_PER_MICROSTEP) + DISTANCE_OFFSET
     targetStep = round((targetPos - curPos - DISTANCE_OFFSET) * MICROSTEPS_PER_MICROMETER)
@@ -280,13 +281,18 @@ def stopCommand(type):
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized stop type for \"%s\"" % (type))
 
 # =================================================================================================
-# Main node function
+# Flags class used for inter-thread states verifications.
 # =================================================================================================
 class Flags(object):
     def __init__(self):
         self._homeSet = False
         self._markSet = False
+        self._calibrating = False
+        self._releasing = False
 
+# =================================================================================================
+# Main node function
+# =================================================================================================
 if __name__ == '__main__':
     print "Preparing to launch Inter-pupillary rail controller node..."
     
@@ -314,8 +320,6 @@ if __name__ == '__main__':
     _controller.setMaxSpeed(200)
 
     # State flags
-    _releasing = False
-    _calibrating = False
     _flags = Flags()
 
     print "Status: %s" % (bin(_controller.status()))

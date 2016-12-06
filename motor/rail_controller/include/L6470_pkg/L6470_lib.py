@@ -486,10 +486,7 @@ class L6470(object):
     # Reset every warning flag and error state. Using getStatus() does not reset these flags.
     def status(self):
         # Obtain status.
-        Status = self.sendCmd3(self.CMD_GETSTATUS, 0x000000)
-        
-        # Keep only the two last bytes of response.
-        return Status & 0x0000FFFF
+        return self.sendCmd(self.CMD_GETSTATUS, self.valueToMSBytes(0x00, 2))
 
     # ==============================================================================================
     # Stepper command shortcuts
