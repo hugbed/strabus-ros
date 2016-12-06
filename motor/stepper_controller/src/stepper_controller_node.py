@@ -61,17 +61,10 @@ def runCommand(direction, speed):
         rospy.logerr(rospy.get_caller_id() + ": Unrecognized run direction for \"%s\"" % (direction))
 
     # Run the stepper if the direction is appropriate.
-<<<<<<< HEAD
     if (direction == "OPEN"):
         _controller.run(L6470.DIR_REVERSE, speed)
     elif (direction == "CLOSE"):
         _controller.run(L6470.DIR_FORWARD, speed)
-=======
-    if (direction == "clockwise"):
-        _controller.run(L6470.DIR_CLOCKWISE, speed)
-    elif (direction == "counter-clockwise"):
-        _controller.run(L6470.DIR_COUNTER_CLOCKWISE, speed)
->>>>>>> master
 
 # Move the stepper by the given number of microsteps.
 def moveCommand(direction, steps):
@@ -145,11 +138,7 @@ if __name__ == '__main__':
 
     rospy.spin()
 
-<<<<<<< HEAD
-    print "Status: %s" % (bin(_controller.getStatus()))
-=======
     print "Status: %s" % (bin(_controller.status()))
->>>>>>> master
 
     _controller.close()
     GPIO.output(24, 0)
