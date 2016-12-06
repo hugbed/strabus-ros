@@ -22,28 +22,27 @@ roslaunch rail_controller rail_controller.launch
 The messages are encoded in JSON. Each message represents a command to run on the rail controller.
 
 #### Move command
+Move the rail in the given direction until a stop command is issued or the rail arrives to a limit.
+
 ```
 {
     "command" : "move",
     "parameters" : {
-        "speed" : 800.0
+        "direction" : "OPEN"
     }
 }
 ```
 
-##### speed (float)
-Used to indicate at which speed the rail will move, in micrometers/s.
-If this value should exceed the configured MIN_SPEED (default 0 step/s) and MAX_SPEED 
-(default 991.8 step/s) of the stepper motor, the stepper's speed is clamped to one of these 
-values.
-
-Note that the sign of the speed value determines the direction of the movement:
- * speed > 0: the rail will open; the optical arms will move away from each other.
- * speed < 0: the rail will close; the optical arms will move towards each other.
+##### direction (string)
+Used to indicate the direction of the movement:
+ * OPEN: the rail will open.
+ * CLOSE: the rail will close.
  
-A speed of 0 will result in the command being ignored.
+A different direction name will result in the command being ignored.
 
 #### Move By command
+Move the rail by the given amount of distance, in micrometers.
+
 ```
 {
     "command" : "moveBy",
@@ -57,12 +56,15 @@ A speed of 0 will result in the command being ignored.
 Used to indicate the amount of distance by which the rail will move, in micrometers.
 This value is associated with the inter-pupillary distance, meaning that each optical arm
 will move by half of this distance.
-
-Note that the sign of the distance value determines the direction of the movement:
- * distance > 0: the rail will open; the optical arms will move away from each other.
- * distance < 0: the rail will close; the optical arms will move towards each other.
  
 A distance of 0 will result in the command being ignored.
+
+##### direction (string)
+Used to indicate the direction of the movement:
+ * OPEN: the rail will open.
+ * CLOSE: the rail will close.
+ 
+A different direction name will result in the command being ignored.
 
 #### Move To command
 ```
@@ -75,15 +77,11 @@ A distance of 0 will result in the command being ignored.
 ```
 
 ##### position (float)
-Used to indicate the amount of distance by which the rail will move, in micrometers.
-This value is associated with the inter-pupillary distance, meaning that each optical arm
-will move by half of this distance.
+Used to indicate the inter-pupillary distance to which the rail will move, in micrometers.
 
-Note that the sign of the distance value determines the direction of the movement:
- * distance > 0: the rail will open; the optical arms will move away from each other.
- * distance < 0: the rail will close; the optical arms will move towards each other.
- 
-A distance of 0 will result in the command being ignored.
+If this position is outside of the inter-pupillary limits (42.8mm to 104mm), the rail will 
+simply stop at the corresponding limit.
+
 #### stop command
 Stop the movement of the rail. If it is not moving, the command does nothing.
 
@@ -91,7 +89,7 @@ Stop the movement of the rail. If it is not moving, the command does nothing.
 {
     "command" : "stop",
     "parameters" : {
-            "type" : "soft"
+        "type" : "soft"
     }
 }
 ```
