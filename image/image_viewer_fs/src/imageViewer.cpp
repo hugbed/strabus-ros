@@ -11,6 +11,7 @@
 #include <sstream>
 #include <map>
 #include <mutex>
+#include <sys/stat.h>
 
 const uint WIDTH = 320;
 const uint HEIGHT = 240;
@@ -71,9 +72,14 @@ void drawThisARGBStuffOnWhiteBackground(cv::Mat &target, cv::Mat &matWithSomeWhi
 bool loadImage(std::string filename, cv::Mat &out)
 {
     ROS_INFO("Loading image, %s", (g_imageDirectory + g_filename).c_str());
+    struct stat buffer;
+    if (!(stat ((g_imageDirectory + g_filename).c_str(), &buffer) == 0)){
+        return false;
+    }
 
     // load image if it's not already loaded
     if (!imageIsLoaded(filename)) {
+
         cv::Mat target = cv::imread(g_imageDirectory + g_filename, CV_LOAD_IMAGE_UNCHANGED);
 
         // insert in dict if loading succeeds
