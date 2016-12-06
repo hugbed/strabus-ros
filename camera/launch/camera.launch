@@ -1,7 +1,7 @@
 <launch>
 	<arg name="side"/>
 	<group ns="/$(arg side)">
-		<node name="camera" pkg="raspicam" type="raspicam_node" args="_width:=400 _height:=400"/>
+		<node name="camera" pkg="raspicam" type="raspicam_node" args="_width:=400 _height:=400 _framerate:=15"/>
 		<node name="video_server" pkg="web_video_server" type="web_video_server" args="_image_transport:=compressed"/>
 	</group>
 </launch>
