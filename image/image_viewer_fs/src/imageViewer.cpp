@@ -129,7 +129,7 @@ cv::Mat rotate(cv::Mat src, float angle)
 
     if (diagonalSquared > maxDSquared) {
         float s = (float)sqrt(maxDSquared/diagonalSquared);
-        cv::resize(src, tmp, cv::Size((int)(s * src.cols), (int)(s*src.rows)), CV_INTER_AREA);
+        cv::resize(src, tmp, cv::Size((int)(s * src.cols) - 1, (int)(s*src.rows) - 1), CV_INTER_AREA);
     }
     else {
         src.copyTo(tmp);
@@ -238,6 +238,10 @@ int main(int argc, char **argv)
     cv::namedWindow("view", CV_WINDOW_NORMAL);
     cv::setWindowProperty("view", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
     cv::startWindowThread();
+
+    // load default image
+    updateImage(g_filename);
+
     ros::spin();
 
     cv::destroyWindow("view");
