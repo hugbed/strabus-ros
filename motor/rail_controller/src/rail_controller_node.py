@@ -174,7 +174,7 @@ def calibrateCommand():
         sleep(0.1)
 
     print "Setting default position..."
-    _controller.move(L6470.DIR_REVERSE, 5 * MICROSTEPS_PER_TURN)
+    _controller.moveTo(63000)
 
     _flags._calibrating = False
     rospy.loginfo(rospy.get_caller_id() + ": Calibration DONE!")
