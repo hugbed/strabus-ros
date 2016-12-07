@@ -173,9 +173,6 @@ def calibrateCommand():
         # Wait a bit and look again if the controller is busy.
         sleep(0.1)
 
-    print "Setting default position..."
-    _controller.moveTo(63000)
-
     _flags._calibrating = False
     rospy.loginfo(rospy.get_caller_id() + ": Calibration DONE!")
 
