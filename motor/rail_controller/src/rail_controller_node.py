@@ -175,6 +175,9 @@ def calibrateCommand():
 
     _flags._calibrating = False
     rospy.loginfo(rospy.get_caller_id() + ": Calibration DONE!")
+    
+    rospy.loginfo(rospy.get_caller_id() + ": Moving to default position (67.500mm).")
+    moveToCommand(67500)
 
 # Move command
 # Move the rail at the maximum configured speed in the given direction.
