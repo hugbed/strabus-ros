@@ -9,9 +9,8 @@ def shutdownCallback(msg):
     print "message data: %s"%(shutdown_flag)
     if shutdown_flag:
         print "SYSTEM IS HALTING, TAKE COVER!"
-        cmd = "halt"
         rospy.loginfo(cmd)
-        call(cmd)
+        call("halt", shell=True)
     else:
         print "No shut down for now"
 
