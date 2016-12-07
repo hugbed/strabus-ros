@@ -219,10 +219,10 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv_bridge::CvImagePtr cv_ptr;
 
     // Framerate logging (for performance measurement purposes)
-    //tm.stop();
-    //std::cout << "Framerate " <<  tm.getCounter()/tm.getTimeSec() <<std::endl;
-    //tm.reset();
-    //tm.start();
+    tm.stop();
+    std::cout << "Framerate " <<  tm.getCounter()/tm.getTimeSec() <<std::endl;
+    tm.reset();
+    tm.start();
 
     try {
         cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -316,6 +316,7 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
     } else {
         printf(" --(!) No captured frame -- Break!");
     }
+    cv::waitKey(3);
 }
 
 
