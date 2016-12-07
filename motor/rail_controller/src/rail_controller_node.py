@@ -135,6 +135,18 @@ def messageCallback(message):
     except ValueError as e:
         rospy.logerr(rospy.get_caller_id() + ": Error decoding JSON \"%s\"" % (str(e)))
 
+# Callback used to call the calibrate command.
+#
+# message: has no purpose whatsoever.
+def calibrateCallback(message):
+    calibrateCommand()
+
+# Callback used to call the moveTo command.
+#
+# message: the ROS data message, containing the target rail position.
+def moveToCallback(message):
+    moveToCommand(message.data)
+
 # =================================================================================================
 # Commands
 # =================================================================================================
@@ -341,8 +353,8 @@ if __name__ == '__main__':
     rospy.Subscriber("motor/inter_eye/command", String, messageCallback)
     
     # Define shortcut topics.
-    rospy.Subscriber("motor/inter_eye/calibrate", Empty, calibrateCommand)
-    rospy.Subscriber("motor/inter_eye/moveTo", Float32, moveToCommand)
+    rospy.Subscriber("motor/inter_eye/calibrate", Empty, calibrateCallback)
+    rospy.Subscriber("motor/inter_eye/moveTo", Float32, moveToCallback)
 
     print "Rail controller node successfully launched!"
 
