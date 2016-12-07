@@ -27,8 +27,8 @@ EyeTracker::EyeTracker()
     image_pub_ = it_.advertise("tracking/image", 1);
     maskCreated = false;
     overlayCounter = 0;
-    tracking_active = true;
-    overlay_active = true;
+    tracking_active = false;
+    overlay_active = false;
     calibrate_center_on_next_frame = true;
     tracking_toggle_service = nh_.advertiseService("tracking/toggle_tracking", &EyeTracker::toggleTracking,this);
     overlay_toggle_service = nh_.advertiseService("tracking/toggle_overlay", &EyeTracker::toggleOverlay,this);
@@ -219,10 +219,10 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv_bridge::CvImagePtr cv_ptr;
 
     // Framerate logging (for performance measurement purposes)
-    //tm.stop();
-    //std::cout << "Framerate " <<  tm.getCounter()/tm.getTimeSec() <<std::endl;
-    //tm.reset();
-    //tm.start();
+    tm.stop();
+    std::cout << "Framerate " <<  tm.getCounter()/tm.getTimeSec() <<std::endl;
+    tm.reset();
+    tm.start();
 
     try {
         cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -233,7 +233,6 @@ void EyeTracker::frameCallback(const sensor_msgs::ImageConstPtr &msg) {
     }
 
     if (!cv_ptr->image.empty()) {
-
         cv::Mat frame = cv_ptr->image;
         cv::Rect eyeRect(0, 0, frame.cols, frame.rows);
         std::vector <cv::Mat> rgbChannels(3);

@@ -203,7 +203,7 @@ void filenameCallback(const std_msgs::String::ConstPtr& msg)
 void scaleCallback(const std_msgs::Float32::ConstPtr& msg)
 {
     float oldScale = g_scale;
-    g_scale = std::min(std::max(0.0f, msg->data), 1.0f);
+    g_scale = std::min(std::max(0.1f, msg->data), 1.0f);
 
     if (oldScale != g_scale) {
         updateImage(g_filename);
