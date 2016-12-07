@@ -6,12 +6,12 @@ from std_msgs.msg import Bool
 
 def shutdownCallback(msg):
     shutdown_flag = msg.data
-    rospy.log("message data: %s"%(shutdown_flag))
+    rospy.loginfo("message data: %s"%(shutdown_flag))
     if shutdown_flag:
-        rospy.log("SYSTEM IS HALTING, TAKE COVER!")
+        rospy.loginfo("SYSTEM IS HALTING, TAKE COVER!")
         call("halt", shell=True)
     else:
-        rospy.log("No shut down for now")
+        rospy.loginfo("No shut down for now")
 
 def listener():
     rospy.init_node('shutdown', anonymous=True)
