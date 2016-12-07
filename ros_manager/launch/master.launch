@@ -1,4 +1,5 @@
 <launch>
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
   <node name="rail_controller" pkg="rail_controller" type="rail_controller_node.py" respawn="true" respawn_delay="5"/>
+  <node name="shutdown" pkg="ros_manager" type="shutdown.py" output="screen"/>
 </launch>
