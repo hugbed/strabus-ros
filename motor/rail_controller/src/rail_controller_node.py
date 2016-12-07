@@ -99,7 +99,7 @@ STEPS_PER_MICROMETER = STEPS_PER_TURN / DISTANCE_PER_TURN
 # The inter-pupillary distance when the rail is at microstep position 0 (home position).
 # The home position is when the rail is completely opened. The step scale and the
 # distance scale are in opposite directions.
-DISTANCE_OFFSET = 104000
+DISTANCE_OFFSET = 93000
 
 # =================================================================================================
 # Callbacks

@@ -1,1 +1,1 @@
-"{\"command\":\"move\",\"parameters\":{\"direction\":\"CLOSE\"}}"
+"{\"command\":\"move\",\"parameters\":{\"direction\":\"OPEN\"}}"
