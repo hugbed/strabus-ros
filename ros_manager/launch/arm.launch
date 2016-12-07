@@ -12,5 +12,6 @@
     <include file="$(find eye_tracking)/launch/tracking.launch">
       <arg name="side" value="$(arg side)"/>
     </include>
+    <node name="shutdown" pkg="ros_manager" type="shutdown.py" output="screen"/>
   </group>
 </launch>
